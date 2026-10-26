@@ -3,7 +3,7 @@ package com.example.pagoflex.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pagoflex.data.model.Transaccion
+import com.example.pagoflex.model.Transaccion
 import com.example.pagoflex.data.repository.PagoFlexRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

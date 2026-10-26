@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.pagoflex.model.Transaccion
 import com.example.pagoflex.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,7 +57,7 @@ fun HomeScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(transacciones) { t ->
+                items(transacciones) { t: Transaccion ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
@@ -65,7 +66,7 @@ fun HomeScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(t.concepto, style = MaterialTheme.typography.titleMedium)
-                            Text("Monto: \$${t.monto}", style = MaterialTheme.typography.bodyMedium)
+                            Text("Monto: $${t.monto}", style = MaterialTheme.typography.bodyMedium)
                             Text("Estado: ${t.estado}", style = MaterialTheme.typography.labelSmall)
                         }
                     }

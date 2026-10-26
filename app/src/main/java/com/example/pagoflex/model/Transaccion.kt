@@ -1,4 +1,4 @@
-package com.example.pagoflex.data.model
+package com.example.pagoflex.model
 
 import com.example.pagoflex.data.local.TransaccionEntity
 

@@ -22,7 +22,6 @@ fun FormularioScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
 
-    // Redirige al inicio cuando se completa el guardado en la base de datos (Room)
     LaunchedEffect(state.guardadoExitoso) {
         if (state.guardadoExitoso) {
             viewModel.resetGuardado()
@@ -48,7 +47,6 @@ fun FormularioScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Campo Nombre
             OutlinedTextField(
                 value = state.nombre,
                 onValueChange = { viewModel.onNombreChange(it) },
@@ -60,7 +58,6 @@ fun FormularioScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Campo Correo Electrónico
             OutlinedTextField(
                 value = state.correo,
                 onValueChange = { viewModel.onCorreoChange(it) },
@@ -73,7 +70,6 @@ fun FormularioScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Campo Monto
             OutlinedTextField(
                 value = state.monto,
                 onValueChange = { viewModel.onMontoChange(it) },
@@ -88,7 +84,6 @@ fun FormularioScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Animación de aparición suave cuando el formulario es válido
             AnimatedVisibility(
                 visible = state.esValido,
                 enter = fadeIn(),
