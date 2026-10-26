@@ -1,15 +1,25 @@
 package com.example.pagoflex.data.repository
 
+import android.content.Context
+import com.example.pagoflex.data.local.AppDatabase
 import com.example.pagoflex.data.local.TransaccionDao
-import com.example.pagoflex.data.local.TransaccionEntity
+import com.example.pagoflex.data.model.Transaccion
+import com.example.pagoflex.data.model.toDomain
+import com.example.pagoflex.data.model.toEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
-class PagoFlexRepository(private val dao: TransaccionDao) {
+class PagoFlexRepository(context: Context) {
 
-    val todasLasTransacciones: Flow<List<TransaccionEntity>> = dao.obtenerTodas()
+    private val dao: TransaccionDao = AppDatabase.getDatabase(context).transaccionDao()
 
-    suspend fun agregarTransaccion(transaccion: TransaccionEntity) {
-        dao.insertarTransaccion(transaccion)
+    fun obtenerTransacciones(): Flow<List<Transaccion>> {
+        return dao.obtenerTodas().map { lista ->
+            lista.map { it.toDomain() }
+        }
+    }
+
+    suspend fun insertarTransaccion(transaccion: Transaccion) {
+        dao.insertar(transaccion.toEntity())
     }
 }
-

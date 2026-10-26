@@ -7,9 +7,8 @@ import androidx.room.PrimaryKey
 data class TransaccionEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val nombre: String,
-    val correo: String,
+    val concepto: String,
     val monto: Double,
-    val fecha: String = "2026-10-25"
+    val fecha: String = "2026-10-25",
+    val estado: String = "Completado"
 )
-

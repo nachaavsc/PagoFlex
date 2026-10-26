@@ -1,9 +1,24 @@
-package com.example.pagoflex.model
+package com.example.pagoflex.data.model
+
+import com.example.pagoflex.data.local.TransaccionEntity
 
 data class Transaccion(
     val id: Int = 0,
-    val concepto: String = "",
-    val monto: Double = 0.0,
-    val fecha: String = "",
-    val estado: String = "Pendiente"
+    val concepto: String,
+    val monto: Double,
+    val estado: String
+)
+
+fun TransaccionEntity.toDomain() = Transaccion(
+    id = id,
+    concepto = concepto,
+    monto = monto,
+    estado = estado
+)
+
+fun Transaccion.toEntity() = TransaccionEntity(
+    id = id,
+    concepto = concepto,
+    monto = monto,
+    estado = estado
 )
