@@ -7,6 +7,8 @@ data class FormularioUIState(
     val correoError: String? = null,
     val monto: String = "",
     val montoError: String? = null,
+    val contrasena: String = "",
+    val contrasenaError: String? = null,
     val esValido: Boolean = false,
     val guardadoExitoso: Boolean = false
 )

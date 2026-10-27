@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pagoflex.viewmodel.FormularioViewModel
@@ -78,6 +79,19 @@ fun FormularioScreen(
                 isError = state.montoError != null,
                 supportingText = {
                     state.montoError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedTextField(
+                value = state.contrasena,
+                onValueChange = { viewModel.onContrasenaChange(it) },
+                label = { Text("Contraseña") },
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                isError = state.contrasenaError != null,
+                supportingText = {
+                    state.contrasenaError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 },
                 modifier = Modifier.fillMaxWidth()
             )
