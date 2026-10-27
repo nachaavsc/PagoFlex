@@ -75,6 +75,12 @@ fun PerfilScreen(
                 Text("Tomar Foto con Cámara")
             }
 
+            TarjetaReferidosYPuntos(
+                codigoReferido = "PAGOFLEX-2026",
+                puntos = 320,
+                metaPuntos = 500
+            )
+
             Spacer(modifier = Modifier.weight(1f))
 
             OutlinedButton(
@@ -83,6 +89,58 @@ fun PerfilScreen(
             ) {
                 Text("Volver al Inicio")
             }
+        }
+    }
+}
+
+@Composable
+private fun TarjetaReferidosYPuntos(
+    codigoReferido: String,
+    puntos: Int,
+    metaPuntos: Int
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = "Programa de Referidos PagoFlex",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Invita a tus amigos y gana puntos cuando realicen su primer pago.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "Tu código: $codigoReferido",
+                style = MaterialTheme.typography.labelLarge
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Puntos por pago puntual",
+                    style = MaterialTheme.typography.titleSmall
+                )
+                Text(
+                    text = "$puntos / $metaPuntos pts",
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+            LinearProgressIndicator(
+                progress = { (puntos.toFloat() / metaPuntos).coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
