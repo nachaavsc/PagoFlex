@@ -11,8 +11,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.FormularioViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,5 +113,16 @@ fun FormularioScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun FormularioScreenPreview() {
+    PagoFlexTheme {
+        FormularioScreen(
+            onNavegarHome = {},
+            viewModel = FormularioViewModel()
+        )
     }
 }
