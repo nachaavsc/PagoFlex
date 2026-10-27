@@ -13,5 +13,5 @@ interface TransaccionDao {
     fun obtenerTodas(): Flow<List<TransaccionEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertar(transaccion: TransaccionEntity)
+    suspend fun insertarTransaccion(transaccion: TransaccionEntity)
 }

@@ -10,18 +10,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.pagoflex.model.Transaccion
+import com.example.pagoflex.data.local.TransaccionEntity
 import com.example.pagoflex.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    viewModel: HomeViewModel,
     onNavegarFormulario: () -> Unit,
-    onNavegarPerfil: () -> Unit,
-    viewModel: HomeViewModel = viewModel()
+    onNavegarPerfil: () -> Unit
 ) {
-    val transacciones by viewModel.transacciones.collectAsState(initial = emptyList())
+    val transacciones by viewModel.transacciones.collectAsState()
 
     Scaffold(
         topBar = {
@@ -57,7 +56,7 @@ fun HomeScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(transacciones) { t: Transaccion ->
+                items(transacciones) { t: TransaccionEntity ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
@@ -66,7 +65,7 @@ fun HomeScreen(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(t.concepto, style = MaterialTheme.typography.titleMedium)
-                            Text("Monto: $${t.monto}", style = MaterialTheme.typography.bodyMedium)
+                            Text("Monto: \$${t.monto}", style = MaterialTheme.typography.bodyMedium)
                             Text("Estado: ${t.estado}", style = MaterialTheme.typography.labelSmall)
                         }
                     }
