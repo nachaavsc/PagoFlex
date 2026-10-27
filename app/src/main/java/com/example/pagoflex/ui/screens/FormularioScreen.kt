@@ -14,10 +14,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.pagoflex.model.FormularioUIState
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.FormularioViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FormularioScreen(
     onNavegarHome: () -> Unit,
@@ -32,6 +32,26 @@ fun FormularioScreen(
         }
     }
 
+    FormularioContent(
+        state = state,
+        onNombreChange = viewModel::onNombreChange,
+        onCorreoChange = viewModel::onCorreoChange,
+        onMontoChange = viewModel::onMontoChange,
+        onContrasenaChange = viewModel::onContrasenaChange,
+        onGuardar = viewModel::guardarTransaccion
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FormularioContent(
+    state: FormularioUIState,
+    onNombreChange: (String) -> Unit,
+    onCorreoChange: (String) -> Unit,
+    onMontoChange: (String) -> Unit,
+    onContrasenaChange: (String) -> Unit,
+    onGuardar: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -52,7 +72,7 @@ fun FormularioScreen(
         ) {
             OutlinedTextField(
                 value = state.nombre,
-                onValueChange = { viewModel.onNombreChange(it) },
+                onValueChange = onNombreChange,
                 label = { Text("Nombre del Destinatario") },
                 isError = state.nombreError != null,
                 supportingText = {
@@ -63,7 +83,7 @@ fun FormularioScreen(
 
             OutlinedTextField(
                 value = state.correo,
-                onValueChange = { viewModel.onCorreoChange(it) },
+                onValueChange = onCorreoChange,
                 label = { Text("Correo Electrónico") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 isError = state.correoError != null,
@@ -75,7 +95,7 @@ fun FormularioScreen(
 
             OutlinedTextField(
                 value = state.monto,
-                onValueChange = { viewModel.onMontoChange(it) },
+                onValueChange = onMontoChange,
                 label = { Text("Monto ($)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 isError = state.montoError != null,
@@ -87,7 +107,7 @@ fun FormularioScreen(
 
             OutlinedTextField(
                 value = state.contrasena,
-                onValueChange = { viewModel.onContrasenaChange(it) },
+                onValueChange = onContrasenaChange,
                 label = { Text("Contraseña") },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
@@ -106,7 +126,7 @@ fun FormularioScreen(
                 exit = fadeOut()
             ) {
                 Button(
-                    onClick = { viewModel.guardarTransaccion() },
+                    onClick = onGuardar,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Procesar Pago Flex")
@@ -120,9 +140,13 @@ fun FormularioScreen(
 @Composable
 fun FormularioScreenPreview() {
     PagoFlexTheme {
-        FormularioScreen(
-            onNavegarHome = {},
-            viewModel = FormularioViewModel()
+        FormularioContent(
+            state = FormularioUIState(),
+            onNombreChange = {},
+            onCorreoChange = {},
+            onMontoChange = {},
+            onContrasenaChange = {},
+            onGuardar = {}
         )
     }
 }
