@@ -4,9 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.pagoflex.ui.screens.FormularioScreen
-import com.example.pagoflex.ui.screens.HomeScreen
-import com.example.pagoflex.ui.screens.PerfilScreen
+import com.example.pagoflex.ui.screens.*
 import com.example.pagoflex.viewmodel.FormularioViewModel
 import com.example.pagoflex.viewmodel.HomeViewModel
 
@@ -25,17 +23,41 @@ fun AppNavigation(
             HomeScreen(
                 viewModel = homeViewModel,
                 onNavegarFormulario = { navController.navigate("formulario") },
-                onNavegarPerfil = { navController.navigate("perfil") }
+                onNavegarPerfil = { navController.navigate("perfil") },
+                onNavegarCompromisos = { navController.navigate("compromisos") },
+                onNavegarHistorial = { navController.navigate("historial") },
+                onNavegarIncidencias = { navController.navigate("incidencias") }
             )
         }
+
         composable("formulario") {
             FormularioScreen(
                 viewModel = formularioViewModel,
                 onNavegarHome = { navController.popBackStack() }
             )
         }
+
         composable("perfil") {
             PerfilScreen(
+                onVolver = { navController.popBackStack() }
+            )
+        }
+
+        composable("compromisos") {
+            CompromisosScreen(
+                viewModel = homeViewModel,
+                onVolver = { navController.popBackStack() }
+            )
+        }
+
+        composable("historial") {
+            HistorialPagosScreen(
+                onVolver = { navController.popBackStack() }
+            )
+        }
+
+        composable("incidencias") {
+            ReporteIncidenciasScreen(
                 onVolver = { navController.popBackStack() }
             )
         }

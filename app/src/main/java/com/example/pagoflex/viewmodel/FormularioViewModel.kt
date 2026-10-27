@@ -13,82 +13,60 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-fun validarNombre(nombre: String): String? =
-    if (nombre.isBlank()) "El nombre es obligatorio" else null
-
-fun validarCorreo(correo: String): String? = when {
-    correo.isBlank() -> "El correo es obligatorio"
-    !correo.contains("@") -> "El correo debe contener @"
-    else -> null
-}
-
-fun validarMonto(monto: String): String? = when {
-    monto.isBlank() -> "El monto es obligatorio"
-    monto.toDoubleOrNull() == null -> "El monto debe ser un número válido"
-    else -> null
-}
-
-fun validarContrasena(contrasena: String): String? =
-    if (contrasena.isBlank()) "La contraseña es obligatoria" else null
-
 class FormularioViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository: PagoFlexRepository =
-        PagoFlexRepository(AppDatabase.getDatabase(application).transaccionDao())
+    private val repository: PagoFlexRepository
 
     private val _uiState = MutableStateFlow(FormularioUIState())
     val uiState: StateFlow<FormularioUIState> = _uiState.asStateFlow()
 
-    fun onNombreChange(valor: String) {
-        _uiState.update { it.copy(nombre = valor, nombreError = validarNombre(valor)).conValidez() }
+    init {
+        val dao = AppDatabase.getDatabase(application).transaccionDao()
+        repository = PagoFlexRepository(dao)
     }
 
-    fun onCorreoChange(valor: String) {
-        _uiState.update { it.copy(correo = valor, correoError = validarCorreo(valor)).conValidez() }
+    fun onNombreChange(nuevoNombre: String) {
+        _uiState.update { it.copy(nombre = nuevoNombre, nombreError = null) }
+        validarFormulario()
     }
 
-    fun onMontoChange(valor: String) {
-        _uiState.update { it.copy(monto = valor, montoError = validarMonto(valor)).conValidez() }
+    fun onCorreoChange(nuevoCorreo: String) {
+        _uiState.update { it.copy(correo = nuevoCorreo, correoError = null) }
+        validarFormulario()
     }
 
-    fun onContrasenaChange(valor: String) {
+    fun onMontoChange(nuevoMonto: String) {
+        _uiState.update { it.copy(monto = nuevoMonto, montoError = null) }
+        validarFormulario()
+    }
+
+    private fun validarFormulario() {
+        val state = _uiState.value
+        val esNombreValido = state.nombre.isNotBlank()
+        val esCorreoValido = state.correo.contains("@") && state.correo.contains(".")
+        val esMontoValido = state.monto.toDoubleOrNull()?.let { it > 0 } ?: false
+
         _uiState.update {
-            it.copy(contrasena = valor, contrasenaError = validarContrasena(valor)).conValidez()
+            it.copy(esValido = esNombreValido && esCorreoValido && esMontoValido)
         }
     }
 
     fun guardarTransaccion() {
-        _uiState.update {
-            it.copy(
-                nombreError = validarNombre(it.nombre),
-                correoError = validarCorreo(it.correo),
-                montoError = validarMonto(it.monto),
-                contrasenaError = validarContrasena(it.contrasena)
-            ).conValidez()
-        }
-
         val state = _uiState.value
-        if (!state.esValido) return
 
         viewModelScope.launch {
-            repository.agregarTransaccion(
-                TransaccionEntity(
-                    concepto = state.nombre,
-                    monto = state.monto.toDouble()
-                )
+            val nuevaTransaccion = TransaccionEntity(
+                concepto = "Pago a ${state.nombre}",
+                monto = state.monto.toDoubleOrNull() ?: 0.0,
+                fecha = "2026-10-27",
+                estado = "Completado"
             )
+            repository.agregarTransaccion(nuevaTransaccion)
             _uiState.update { it.copy(guardadoExitoso = true) }
         }
     }
 
     fun resetGuardado() {
-        _uiState.update { it.copy(guardadoExitoso = false) }
+        _uiState.update { FormularioUIState() }
     }
-
-    private fun FormularioUIState.conValidez(): FormularioUIState = copy(
-        esValido = validarNombre(nombre) == null &&
-            validarCorreo(correo) == null &&
-            validarMonto(monto) == null &&
-            validarContrasena(contrasena) == null
-    )
 }

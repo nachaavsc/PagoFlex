@@ -1,12 +1,11 @@
 package com.example.pagoflex.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,12 +18,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.viewmodel.FormularioViewModel
 
-private val FondoMoradoSuave = Color(0xFFF3E8FF)
-private val MoradoPrincipal = Color(0xFF9333EA)
+private val FondoAzulSuave = Color(0xFFF0F7FF)
+private val AzulCorporativo = Color(0xFF0284C7)
 private val TarjetaBlanca = Color(0xFFFFFFFF)
-private val BordeLila = Color(0xFFE9D5FF)
-private val TextoOscuro = Color(0xFF3B0764)
-private val TextoGris = Color(0xFF6B21A8)
+private val BordeAzul = Color(0xFFBAE6FD)
+private val TextoGris = Color(0xFF334155)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,7 +32,9 @@ fun FormularioScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     var password by remember { mutableStateOf("") }
+    val scrollState = rememberScrollState()
 
+    // Detecta cuándo se guarda en la base de datos y vuelve al Home
     LaunchedEffect(state.guardadoExitoso) {
         if (state.guardadoExitoso) {
             viewModel.resetGuardado()
@@ -43,7 +43,7 @@ fun FormularioScreen(
     }
 
     Scaffold(
-        containerColor = FondoMoradoSuave,
+        containerColor = FondoAzulSuave,
         topBar = {
             TopAppBar(
                 title = {
@@ -55,7 +55,7 @@ fun FormularioScreen(
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MoradoPrincipal
+                    containerColor = AzulCorporativo
                 ),
                 navigationIcon = {
                     TextButton(onClick = onNavegarHome) {
@@ -69,6 +69,7 @@ fun FormularioScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(scrollState)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
@@ -87,7 +88,7 @@ fun FormularioScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, BordeLila, RoundedCornerShape(16.dp)),
+                    .border(1.dp, BordeAzul, RoundedCornerShape(16.dp)),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = TarjetaBlanca),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -107,9 +108,9 @@ fun FormularioScreen(
                             state.nombreError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                         },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MoradoPrincipal,
-                            focusedLabelColor = MoradoPrincipal,
-                            unfocusedBorderColor = BordeLila
+                            focusedBorderColor = AzulCorporativo,
+                            focusedLabelColor = AzulCorporativo,
+                            unfocusedBorderColor = BordeAzul
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -125,9 +126,9 @@ fun FormularioScreen(
                             state.correoError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                         },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MoradoPrincipal,
-                            focusedLabelColor = MoradoPrincipal,
-                            unfocusedBorderColor = BordeLila
+                            focusedBorderColor = AzulCorporativo,
+                            focusedLabelColor = AzulCorporativo,
+                            unfocusedBorderColor = BordeAzul
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -143,9 +144,9 @@ fun FormularioScreen(
                             state.montoError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                         },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MoradoPrincipal,
-                            focusedLabelColor = MoradoPrincipal,
-                            unfocusedBorderColor = BordeLila
+                            focusedBorderColor = AzulCorporativo,
+                            focusedLabelColor = AzulCorporativo,
+                            unfocusedBorderColor = BordeAzul
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -158,9 +159,9 @@ fun FormularioScreen(
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MoradoPrincipal,
-                            focusedLabelColor = MoradoPrincipal,
-                            unfocusedBorderColor = BordeLila
+                            focusedBorderColor = AzulCorporativo,
+                            focusedLabelColor = AzulCorporativo,
+                            unfocusedBorderColor = BordeAzul
                         ),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -170,27 +171,29 @@ fun FormularioScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            AnimatedVisibility(
-                visible = state.esValido,
-                enter = fadeIn(),
-                exit = fadeOut()
+            Button(
+                onClick = {
+                    viewModel.guardarTransaccion()
+                },
+                enabled = state.nombre.isNotEmpty() && state.correo.isNotEmpty() && state.monto.isNotEmpty(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = AzulCorporativo,
+                    disabledContainerColor = Color.LightGray
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Button(
-                    onClick = { viewModel.guardarTransaccion() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MoradoPrincipal),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = "Procesar Pago Flex",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                Text(
+                    text = "Procesar Pago Flex",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

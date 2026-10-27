@@ -1,12 +1,8 @@
 package com.example.pagoflex.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,40 +12,39 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pagoflex.data.local.TransaccionEntity
 import com.example.pagoflex.viewmodel.HomeViewModel
 
-private val FondoMoradoSuave = Color(0xFFF3E8FF)
-private val MoradoPrincipal = Color(0xFF9333EA)
-private val MoradoBanner = Color(0xEDA855F7)
+private val FondoClaro = Color(0xFFF8FAFC)
+private val AzulCorporativo = Color(0xFF0284C7)
 private val TarjetaBlanca = Color(0xFFFFFFFF)
-private val BordeLila = Color(0xFFE9D5FF)
-private val RosaAlerta = Color(0xFFF43F5E)
-private val TextoOscuro = Color(0xFF3B0764)
-private val TextoGris = Color(0xFF6B21A8)
+private val BordeGris = Color(0xFFE2E8F0)
+private val FondoAlertaRojo = Color(0xFFFEF2F2)
+private val TextoRojo = Color(0xFF991B1B)
+private val TextoOscuro = Color(0xFF0F172A)
+private val TextoGris = Color(0xFF64748B)
+
+data class CuentaDetalle(
+    val empresa: String,
+    val detalle: String,
+    val monto: String,
+    val fecha: String,
+    val folio: String
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
     onNavegarFormulario: () -> Unit,
-    onNavegarPerfil: () -> Unit
+    onNavegarPerfil: () -> Unit,
+    onNavegarCompromisos: () -> Unit,
+    onNavegarHistorial: () -> Unit,
+    onNavegarIncidencias: () -> Unit
 ) {
-    val transacciones by viewModel.transacciones.collectAsState()
-    var filtroSeleccionado by remember { mutableStateOf("Todos") }
-
-    val totalMonto = transacciones.sumOf { it.monto }
-
-    val transaccionesFiltradas = remember(transacciones, filtroSeleccionado) {
-        when (filtroSeleccionado) {
-            "Completados" -> transacciones.filter { it.estado.contains("Completado", ignoreCase = true) }
-            "Pendientes" -> transacciones.filter { it.estado.contains("Pendiente", ignoreCase = true) }
-            else -> transacciones
-        }
-    }
+    var cuentaSeleccionada by remember { mutableStateOf<CuentaDetalle?>(null) }
 
     Scaffold(
-        containerColor = FondoMoradoSuave,
+        containerColor = FondoClaro,
         topBar = {
             TopAppBar(
                 title = {
@@ -60,9 +55,7 @@ fun HomeScreen(
                         fontSize = 20.sp
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MoradoPrincipal
-                ),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = AzulCorporativo),
                 actions = {
                     TextButton(onClick = onNavegarPerfil) {
                         Text("Perfil", color = Color.White, fontWeight = FontWeight.Bold)
@@ -73,7 +66,7 @@ fun HomeScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onNavegarFormulario,
-                containerColor = MoradoPrincipal,
+                containerColor = AzulCorporativo,
                 contentColor = Color.White
             ) {
                 Text("+", fontSize = 28.sp, fontWeight = FontWeight.Bold)
@@ -87,26 +80,23 @@ fun HomeScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MoradoBanner)
+                    colors = CardDefaults.cardColors(containerColor = AzulCorporativo)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp)
-                    ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
                         Text(
-                            text = "\$${String.format("%,.0f", totalMonto).replace(",", ".")}",
+                            "$105.000",
                             color = Color.White,
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Total de transacciones registradas",
+                            "Próximo vencimiento: 05-10-2026",
                             color = Color.White.copy(alpha = 0.9f),
                             fontSize = 14.sp
                         )
@@ -114,25 +104,20 @@ fun HomeScreen(
                 }
             }
 
-            // 2. Alerta de Estado / Compromisos
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = RosaAlerta)
+                    colors = CardDefaults.cardColors(containerColor = FondoAlertaRojo)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
+                        modifier = Modifier.padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = "👤", fontSize = 18.sp)
-                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Tienes ${transacciones.size} compromiso(s) registrado(s).",
-                            color = Color.White,
-                            fontWeight = FontWeight.Medium,
+                            "Tienes 1 compromiso de pago vencido.",
+                            color = TextoRojo,
+                            fontWeight = FontWeight.SemiBold,
                             fontSize = 14.sp
                         )
                     }
@@ -140,145 +125,154 @@ fun HomeScreen(
             }
 
             item {
-                Column {
-                    Text(
-                        text = "Filtrar compromisos",
-                        color = TextoOscuro,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = onNavegarCompromisos,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Compromisos", fontSize = 12.sp, color = AzulCorporativo)
+                    }
+                    OutlinedButton(
+                        onClick = onNavegarHistorial,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Historial", fontSize = 12.sp, color = AzulCorporativo)
+                    }
+                    OutlinedButton(
+                        onClick = onNavegarIncidencias,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Incidencias", fontSize = 12.sp, color = AzulCorporativo)
+                    }
+                }
+            }
 
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val opciones = listOf("Todos", "Completados", "Pendientes")
-                        items(opciones) { opcion ->
-                            val estaSeleccionado = filtroSeleccionado == opcion
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = if (estaSeleccionado) MoradoPrincipal else TarjetaBlanca,
-                                        shape = RoundedCornerShape(20.dp)
-                                    )
-                                    .border(
-                                        width = 1.dp,
-                                        color = if (estaSeleccionado) MoradoPrincipal else BordeLila,
-                                        shape = RoundedCornerShape(20.dp)
-                                    )
-                                    .clickable { filtroSeleccionado = opcion }
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Text(
-                                    text = opcion,
-                                    color = if (estaSeleccionado) Color.White else TextoOscuro,
-                                    fontSize = 14.sp,
-                                    fontWeight = if (estaSeleccionado) FontWeight.Bold else FontWeight.Normal
+            item {
+                Text(
+                    "Cuentas del Mes",
+                    color = TextoOscuro,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
+                )
+            }
+
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth().border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = TarjetaBlanca)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Club Los Halcones", fontWeight = FontWeight.Bold, color = TextoOscuro)
+                            Text("$17.000", fontWeight = FontWeight.Bold, color = TextoRojo)
+                        }
+                        Text("Cuota 10/12 • Vence: 05-10-2026 (Vencida)", color = TextoGris, fontSize = 12.sp)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = {
+                                cuentaSeleccionada = CuentaDetalle(
+                                    empresa = "Club Los Halcones",
+                                    detalle = "Cuota 10/12",
+                                    monto = "$17.000",
+                                    fecha = "05-10-2026 (Vencida)",
+                                    folio = "PF-0010"
                                 )
-                            }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = AzulCorporativo)
+                        ) {
+                            Text("Ver detalle para pagar", color = Color.White)
                         }
                     }
                 }
             }
 
             item {
-                Text(
-                    text = "Cuentas del Mes",
-                    color = TextoOscuro,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp
-                )
-            }
-            if (transaccionesFiltradas.isEmpty()) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No se encontraron compromisos.",
-                            color = TextoGris,
-                            fontSize = 14.sp
-                        )
-                    }
-                }
-            } else {
-                items(transaccionesFiltradas) { item ->
-                    TarjetaCompromiso(item = item)
-                }
-            }
-            item {
-                OutlinedButton(
-                    onClick = onNavegarPerfil,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    border = ButtonDefaults.outlinedButtonBorder.copy(brush = androidx.compose.ui.graphics.SolidColor(MoradoPrincipal))
+                Card(
+                    modifier = Modifier.fillMaxWidth().border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = TarjetaBlanca)
                 ) {
-                    Text(
-                        text = "Ir a mi perfil PagoFlex",
-                        color = MoradoPrincipal,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Plaza Oriente", fontWeight = FontWeight.Bold, color = TextoOscuro)
+                            Text("$520.000", fontWeight = FontWeight.Bold, color = AzulCorporativo)
+                        }
+                        Text("Arriendo octubre • Vence: 10-10-2026", color = TextoGris, fontSize = 12.sp)
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = {
+                                cuentaSeleccionada = CuentaDetalle(
+                                    empresa = "Plaza Oriente",
+                                    detalle = "Arriendo octubre",
+                                    monto = "$520.000",
+                                    fecha = "10-10-2026",
+                                    folio = "PF-0011"
+                                )
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = AzulCorporativo)
+                        ) {
+                            Text("Ver detalle para pagar", color = Color.White)
+                        }
+                    }
                 }
             }
         }
     }
-}
 
-@Composable
-fun TarjetaCompromiso(item: TransaccionEntity) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, BordeLila, RoundedCornerShape(16.dp)),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = TarjetaBlanca)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+    cuentaSeleccionada?.let { cuenta ->
+        AlertDialog(
+            onDismissRequest = { cuentaSeleccionada = null },
+            title = {
                 Text(
-                    text = item.concepto,
-                    color = TextoOscuro,
+                    text = "Detalle de Pago",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 20.sp,
+                    color = TextoOscuro
                 )
-                Text(
-                    text = "\$${item.monto}",
-                    color = MoradoPrincipal,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Text(text = "Empresa: ${cuenta.empresa}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
+                    Text(text = "Concepto: ${cuenta.detalle}", fontSize = 14.sp, color = TextoGris)
+                    Text(text = "Folio de Cobro: ${cuenta.folio}", fontSize = 14.sp, color = TextoGris)
+                    Text(text = "Fecha Vencimiento: ${cuenta.fecha}", fontSize = 14.sp, color = TextoGris)
+                    Divider(color = BordeGris)
+                    Text(
+                        text = "Monto Total: ${cuenta.monto}",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        color = AzulCorporativo
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        cuentaSeleccionada = null
+                        onNavegarFormulario()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AzulCorporativo)
+                ) {
+                    Text("Pagar Ahora", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { cuentaSeleccionada = null }) {
+                    Text("Cerrar", color = TextoGris)
+                }
             }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "Estado: ${item.estado} • Fecha: ${item.fecha}",
-                color = TextoGris,
-                fontSize = 12.sp
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = { },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = MoradoPrincipal),
-                shape = RoundedCornerShape(10.dp)
-            ) {
-                Text(
-                    text = "Ver detalle para pagar",
-                    color = Color.White,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-        }
+        )
     }
 }

@@ -1,29 +1,45 @@
 package com.example.pagoflex.ui.screens
 
 import android.graphics.Bitmap
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.pagoflex.ui.theme.PagoFlexTheme
+import androidx.compose.ui.unit.sp
+
+private val FondoClaro = Color(0xFFF8FAFC)
+private val AzulCorporativo = Color(0xFF0284C7)
+private val TarjetaBlanca = Color(0xFFFFFFFF)
+private val BordeGris = Color(0xFFE2E8F0)
+private val TextoOscuro = Color(0xFF0F172A)
+private val TextoGris = Color(0xFF64748B)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilScreen(
     onVolver: () -> Unit
 ) {
+    val context = LocalContext.current
     var fotoBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    val cameraLauncher = rememberLauncherForActivityResult(
+    // Invocador nativo de cámara con captura segura
+    val launcherCamara = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap ->
         if (bitmap != null) {
@@ -32,9 +48,25 @@ fun PerfilScreen(
     }
 
     Scaffold(
+        containerColor = FondoClaro,
         topBar = {
             TopAppBar(
-                title = { Text("Perfil de Usuario") }
+                title = {
+                    Text(
+                        "Perfil de Usuario",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 20.sp
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = AzulCorporativo
+                ),
+                navigationIcon = {
+                    TextButton(onClick = onVolver) {
+                        Text("Volver", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
             )
         }
     ) { paddingValues ->
@@ -42,115 +74,125 @@ fun PerfilScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            if (fotoBitmap != null) {
-                Image(
-                    bitmap = fotoBitmap!!.asImageBitmap(),
-                    contentDescription = "Foto de perfil",
-                    modifier = Modifier
-                        .size(120.dp)
-                        .clip(CircleShape)
-                )
-            } else {
-                Surface(
-                    modifier = Modifier.size(120.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.secondaryContainer
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("Sin Foto")
-                    }
+            // Avatar circular
+            Box(
+                modifier = Modifier
+                    .size(130.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE0F2FE))
+                    .border(2.dp, AzulCorporativo, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                if (fotoBitmap != null) {
+                    Image(
+                        bitmap = fotoBitmap!!.asImageBitmap(),
+                        contentDescription = "Foto de Perfil",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(
+                        text = "Sin Foto",
+                        color = AzulCorporativo,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
                 }
             }
 
             Text(
                 text = "Usuario PagoFlex",
-                style = MaterialTheme.typography.titleLarge
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextoOscuro
             )
 
-            Button(onClick = { cameraLauncher.launch(null) }) {
-                Text("Tomar Foto con Cámara")
+            // Botón con llamado seguro a la cámara
+            Button(
+                onClick = {
+                    try {
+                        launcherCamara.launch(null)
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "No se pudo abrir la cámara en este dispositivo", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = AzulCorporativo),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Tomar Foto con Cámara", color = Color.White, fontWeight = FontWeight.Bold)
             }
 
-            TarjetaReferidosYPuntos(
-                codigoReferido = "PAGOFLEX-2026",
-                puntos = 320,
-                metaPuntos = 500
-            )
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = TarjetaBlanca)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Programa de Referidos PagoFlex",
+                        fontWeight = FontWeight.Bold,
+                        color = TextoOscuro,
+                        fontSize = 16.sp
+                    )
+                    Text(
+                        text = "Invita a tus amigos y gana puntos cuando realicen su primer pago.",
+                        color = TextoGris,
+                        fontSize = 13.sp
+                    )
+                    Text(
+                        text = "Tu código: PAGOFLEX-2026",
+                        fontWeight = FontWeight.Bold,
+                        color = AzulCorporativo,
+                        fontSize = 14.sp
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("Puntos acumulados:", fontSize = 13.sp, color = TextoOscuro)
+                        Text("320 / 500 pts", fontWeight = FontWeight.Bold, color = AzulCorporativo, fontSize = 13.sp)
+                    }
+                    LinearProgressIndicator(
+                        progress = { 0.64f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
+                        color = AzulCorporativo,
+                        trackColor = Color(0xFFE2E8F0)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.weight(1f))
 
             OutlinedButton(
                 onClick = onVolver,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Volver al Inicio")
-            }
-        }
-    }
-}
-
-@Composable
-private fun TarjetaReferidosYPuntos(
-    codigoReferido: String,
-    puntos: Int,
-    metaPuntos: Int
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = "Programa de Referidos PagoFlex",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = "Invita a tus amigos y gana puntos cuando realicen su primer pago.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "Tu código: $codigoReferido",
-                style = MaterialTheme.typography.labelLarge
-            )
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier
+                    .fillMaxWidth()
+                                        .height(48.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    text = "Puntos por pago puntual",
-                    style = MaterialTheme.typography.titleSmall
-                )
-                Text(
-                    text = "$puntos / $metaPuntos pts",
-                    style = MaterialTheme.typography.labelLarge
+                    text = "Volver al Inicio",
+                    color = AzulCorporativo,
+                    fontWeight = FontWeight.Bold
                 )
             }
-            LinearProgressIndicator(
-                progress = { (puntos.toFloat() / metaPuntos).coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth()
-            )
         }
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun PerfilScreenPreview() {
-    PagoFlexTheme {
-        PerfilScreen(onVolver = {})
     }
 }
