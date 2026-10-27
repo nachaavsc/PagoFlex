@@ -15,12 +15,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.example.pagoflex.data.local.TransaccionEntity
+import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.HomeViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel,
@@ -52,6 +53,24 @@ fun HomeScreen(
         }
     }
 
+    HomeContent(
+        transacciones = transacciones,
+        recordatoriosActivos = recordatoriosActivos,
+        onRecordatoriosToggle = onRecordatoriosToggle,
+        onNavegarFormulario = onNavegarFormulario,
+        onNavegarPerfil = onNavegarPerfil
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeContent(
+    transacciones: List<TransaccionEntity>,
+    recordatoriosActivos: Boolean,
+    onRecordatoriosToggle: (Boolean) -> Unit,
+    onNavegarFormulario: () -> Unit,
+    onNavegarPerfil: () -> Unit
+) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -125,5 +144,22 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun HomeScreenPreview() {
+    PagoFlexTheme {
+        HomeContent(
+            transacciones = listOf(
+                TransaccionEntity(id = 2, concepto = "Ana López", monto = 150.0),
+                TransaccionEntity(id = 1, concepto = "Carlos Ruiz", monto = 89.5)
+            ),
+            recordatoriosActivos = true,
+            onRecordatoriosToggle = {},
+            onNavegarFormulario = {},
+            onNavegarPerfil = {}
+        )
     }
 }
