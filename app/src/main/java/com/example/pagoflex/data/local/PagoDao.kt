@@ -12,7 +12,6 @@ interface PagoDao {
     @Query("SELECT * FROM pagos ORDER BY fechaPago DESC")
     fun observarTodos(): Flow<List<PagoEntity>>
 
-    /** Filters by period start (epoch millis) and, when [empresa] is null, by every company. */
     @Query(
         """
         SELECT * FROM pagos

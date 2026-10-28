@@ -38,7 +38,6 @@ fun PerfilScreen(
     val context = LocalContext.current
     var fotoBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
-    // Invocador nativo de cámara con captura segura
     val launcherCamara = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
     ) { bitmap ->
@@ -80,7 +79,6 @@ fun PerfilScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Avatar circular
             Box(
                 modifier = Modifier
                     .size(130.dp)
@@ -115,7 +113,6 @@ fun PerfilScreen(
                 color = TextoOscuro
             )
 
-            // Botón con llamado seguro a la cámara
             Button(
                 onClick = {
                     try {

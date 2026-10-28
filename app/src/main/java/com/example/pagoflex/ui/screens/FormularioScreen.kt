@@ -34,7 +34,6 @@ fun FormularioScreen(
     var password by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
 
-    // Detecta cuándo se guarda en la base de datos y vuelve al Home
     LaunchedEffect(state.guardadoExitoso) {
         if (state.guardadoExitoso) {
             viewModel.resetGuardado()

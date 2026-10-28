@@ -2,7 +2,6 @@ package com.example.pagoflex.data.local
 
 import java.util.Calendar
 
-/** Seed data loaded the first time the database is created. */
 object DatosIniciales {
 
     fun compromisos(): List<CompromisoEntity> = listOf(

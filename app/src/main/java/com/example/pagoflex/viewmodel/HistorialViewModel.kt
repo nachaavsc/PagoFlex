@@ -32,7 +32,6 @@ class HistorialViewModel(application: Application) : AndroidViewModel(applicatio
     private val _periodo = MutableStateFlow(PeriodoHistorial.ULTIMO_MES)
     val periodo: StateFlow<PeriodoHistorial> = _periodo.asStateFlow()
 
-    /** Selected company filter; null means every company. */
     private val _empresa = MutableStateFlow<String?>(null)
     val empresa: StateFlow<String?> = _empresa.asStateFlow()
 

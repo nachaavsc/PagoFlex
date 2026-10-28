@@ -21,7 +21,6 @@ class CompromisosViewModel(application: Application) : AndroidViewModel(applicat
 
     private val repository = PagoFlexRepository(AppDatabase.getDatabase(application))
 
-    /** Selected status filter; null means every commitment. */
     private val _filtroEstado = MutableStateFlow<String?>(null)
     val filtroEstado: StateFlow<String?> = _filtroEstado.asStateFlow()
 

@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.ui.components.EstadoBadge
 import com.example.pagoflex.ui.util.formatearFechaHora
 import com.example.pagoflex.viewmodel.IncidenciasViewModel
 
@@ -181,10 +182,11 @@ fun ReporteIncidenciasScreen(
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(incidencia.motivo, fontWeight = FontWeight.Bold, color = TextoOscuro)
-                            Text(incidencia.estado, fontWeight = FontWeight.Bold, color = AzulCorporativo, fontSize = 12.sp)
+                            EstadoBadge(incidencia.estado)
                         }
                         if (incidencia.detalle.isNotBlank()) {
                             Text(incidencia.detalle, color = TextoGris, fontSize = 13.sp)

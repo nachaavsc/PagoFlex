@@ -22,7 +22,6 @@ data class CompromisoEntity(
     val concepto: String,
     val cuotaActual: Int,
     val totalCuotas: Int,
-    // Amounts are stored in CLP, which has no decimal units.
     val monto: Long,
     val fechaVencimiento: Long,
     val estado: String = EstadoPago.PENDIENTE

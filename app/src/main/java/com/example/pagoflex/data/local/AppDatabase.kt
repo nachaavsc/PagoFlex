@@ -57,7 +57,6 @@ abstract class AppDatabase : RoomDatabase() {
         private object SeedCallback : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) = precargar()
 
-            // Destructive migrations recreate the tables without calling onCreate.
             override fun onDestructiveMigration(db: SupportSQLiteDatabase) = precargar()
 
             private fun precargar() {

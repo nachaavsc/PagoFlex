@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.local.EstadoPago
+import com.example.pagoflex.ui.components.EstadoBadge
 import com.example.pagoflex.ui.util.formatearFecha
 import com.example.pagoflex.ui.util.formatearMonto
 import com.example.pagoflex.viewmodel.CompromisosViewModel
@@ -27,8 +28,6 @@ private val TarjetaBlanca = Color(0xFFFFFFFF)
 private val BordeGris = Color(0xFFE2E8F0)
 private val TextoOscuro = Color(0xFF0F172A)
 private val TextoGris = Color(0xFF64748B)
-private val TextoRojo = Color(0xFF991B1B)
-private val TextoAmbar = Color(0xFFB45309)
 
 private data class OpcionFiltro(val etiqueta: String, val estado: String?)
 
@@ -38,12 +37,6 @@ private val opcionesFiltro = listOf(
     OpcionFiltro("Vencidos", EstadoPago.VENCIDO),
     OpcionFiltro("Pendientes", EstadoPago.PENDIENTE)
 )
-
-private fun colorEstado(estado: String): Color = when (estado) {
-    EstadoPago.PAGADO -> AzulCorporativo
-    EstadoPago.VENCIDO -> TextoRojo
-    else -> TextoAmbar
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -152,18 +145,19 @@ fun CompromisosScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(compromiso.empresa, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(compromiso.empresa, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
+                            EstadoBadge(compromiso.estado)
+                        }
                         Text(compromiso.concepto, color = TextoGris, fontSize = 13.sp)
                         Text("Cuota: ${compromiso.cuotaActual} de ${compromiso.totalCuotas}", color = TextoOscuro, fontSize = 14.sp)
                         Text("Monto: ${formatearMonto(compromiso.monto)}", fontWeight = FontWeight.Bold, color = AzulCorporativo)
                         Text("Vencimiento: ${formatearFecha(compromiso.fechaVencimiento)}", color = TextoGris, fontSize = 13.sp)
                         Text("Folio: ${compromiso.folio}", color = TextoGris, fontSize = 13.sp)
-                        Text(
-                            "Estado: ${compromiso.estado}",
-                            color = colorEstado(compromiso.estado),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        )
 
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(

@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.local.CompromisoEntity
 import com.example.pagoflex.data.local.EstadoPago
+import com.example.pagoflex.ui.components.EstadoBadge
 import com.example.pagoflex.ui.util.formatearFecha
 import com.example.pagoflex.ui.util.formatearMonto
 import com.example.pagoflex.viewmodel.HomeViewModel
@@ -180,18 +181,23 @@ fun HomeScreen(
                     colors = CardDefaults.cardColors(containerColor = TarjetaBlanca)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Text(cuenta.empresa, fontWeight = FontWeight.Bold, color = TextoOscuro)
-                            Text(
-                                formatearMonto(cuenta.monto),
-                                fontWeight = FontWeight.Bold,
-                                color = if (vencida) TextoRojo else AzulCorporativo
-                            )
+                            EstadoBadge(cuenta.estado)
                         }
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            "Cuota ${cuenta.cuotaActual}/${cuenta.totalCuotas} • Vence: " +
-                                formatearFecha(cuenta.fechaVencimiento) +
-                                if (vencida) " (Vencida)" else "",
+                            formatearMonto(cuenta.monto),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            color = if (vencida) TextoRojo else AzulCorporativo
+                        )
+                        Text(
+                            "Cuota ${cuenta.cuotaActual}/${cuenta.totalCuotas} • Vence: ${formatearFecha(cuenta.fechaVencimiento)}",
                             color = TextoGris,
                             fontSize = 12.sp
                         )
@@ -230,10 +236,11 @@ fun HomeScreen(
                     Text(text = "Cuota: ${cuenta.cuotaActual} de ${cuenta.totalCuotas}", fontSize = 14.sp, color = TextoGris)
                     Text(text = "Folio de Cobro: ${cuenta.folio}", fontSize = 14.sp, color = TextoGris)
                     Text(
-                        text = "Fecha Vencimiento: ${formatearFecha(cuenta.fechaVencimiento)} (${cuenta.estado})",
+                        text = "Fecha Vencimiento: ${formatearFecha(cuenta.fechaVencimiento)}",
                         fontSize = 14.sp,
                         color = TextoGris
                     )
+                    EstadoBadge(cuenta.estado)
                     Divider(color = BordeGris)
                     Text(
                         text = "Monto Total: ${formatearMonto(cuenta.monto)}",

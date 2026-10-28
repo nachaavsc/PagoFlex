@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.ui.components.EstadoBadge
 import com.example.pagoflex.ui.util.formatearFechaHora
 import com.example.pagoflex.ui.util.formatearMonto
 import com.example.pagoflex.viewmodel.HistorialViewModel
@@ -103,7 +104,6 @@ fun HistorialPagosScreen(
                     Text("Filtrar por empresa:", fontWeight = FontWeight.Bold, color = TextoOscuro)
                     Spacer(modifier = Modifier.height(6.dp))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        // null represents the "Todas" option.
                         items(listOf<String?>(null) + empresas) { e ->
                             val sel = empresaSeleccionada == e
                             Box(
@@ -140,10 +140,11 @@ fun HistorialPagosScreen(
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(pago.empresa, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
-                            Text(pago.estado.uppercase(), fontWeight = FontWeight.Bold, color = AzulCorporativo, fontSize = 12.sp)
+                            EstadoBadge(pago.estado)
                         }
                         Text("Concepto: ${pago.concepto}", color = TextoGris, fontSize = 13.sp)
                         Text("Cuota: ${pago.cuotaActual} de ${pago.totalCuotas}", color = TextoOscuro, fontSize = 13.sp)
