@@ -1,5 +1,6 @@
 package com.example.pagoflex.ui.screens
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,8 +14,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.ui.components.BannerConfirmacion
 import com.example.pagoflex.ui.components.EstadoBadge
 import com.example.pagoflex.ui.util.formatearFechaHora
+import com.example.pagoflex.ui.util.rememberVibrador
 import com.example.pagoflex.viewmodel.IncidenciasViewModel
 
 private val FondoClaro = Color(0xFFF8FAFC)
@@ -31,6 +34,8 @@ fun ReporteIncidenciasScreen(
     onVolver: () -> Unit
 ) {
     val incidencias by viewModel.incidencias.collectAsState()
+    val vibrador = rememberVibrador()
+    var mensajeConfirmacion by remember { mutableStateOf<String?>(null) }
     var motivo by remember { mutableStateOf("Error en el cobro") }
     var detalles by remember { mutableStateOf("") }
     var expandido by remember { mutableStateOf(false) }
@@ -65,7 +70,8 @@ fun ReporteIncidenciasScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(16.dp)
+                .animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
@@ -141,8 +147,10 @@ fun ReporteIncidenciasScreen(
 
             Button(
                 onClick = {
+                    vibrador.confirmacion()
                     viewModel.reportarIncidencia(motivo, detalles)
                     detalles = ""
+                    mensajeConfirmacion = "Reporte enviado. Te avisaremos cuando sea revisado."
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -156,6 +164,11 @@ fun ReporteIncidenciasScreen(
                     fontWeight = FontWeight.Bold
                 )
             }
+
+            BannerConfirmacion(
+                mensaje = mensajeConfirmacion,
+                onOcultar = { mensajeConfirmacion = null }
+            )
 
             Text(
                 text = "Mis reportes",

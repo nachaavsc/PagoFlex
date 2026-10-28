@@ -1,5 +1,6 @@
 package com.example.pagoflex.ui.screens
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,9 +18,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.local.EstadoPago
+import com.example.pagoflex.ui.components.BannerConfirmacion
 import com.example.pagoflex.ui.components.EstadoBadge
 import com.example.pagoflex.ui.util.formatearFecha
 import com.example.pagoflex.ui.util.formatearMonto
+import com.example.pagoflex.ui.util.rememberVibrador
 import com.example.pagoflex.viewmodel.CompromisosViewModel
 
 private val FondoClaro = Color(0xFFF8FAFC)
@@ -47,6 +50,8 @@ fun CompromisosScreen(
     val compromisos by viewModel.compromisos.collectAsState()
     val conteo by viewModel.conteoPorEstado.collectAsState()
     val filtroEstado by viewModel.filtroEstado.collectAsState()
+    val vibrador = rememberVibrador()
+    var mensajeConfirmacion by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         containerColor = FondoClaro,
@@ -111,7 +116,10 @@ fun CompromisosScreen(
                                         color = if (estaSeleccionado) AzulCorporativo else BordeGris,
                                         shape = RoundedCornerShape(20.dp)
                                     )
-                                    .clickable { viewModel.onFiltroChange(opcion.estado) }
+                                    .clickable {
+                                        vibrador.toque()
+                                        viewModel.onFiltroChange(opcion.estado)
+                                    }
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
                             ) {
                                 Text(
@@ -126,9 +134,21 @@ fun CompromisosScreen(
                 }
             }
 
+            item {
+                BannerConfirmacion(
+                    mensaje = mensajeConfirmacion,
+                    onOcultar = { mensajeConfirmacion = null }
+                )
+            }
+
             if (compromisos.isEmpty()) {
-                item {
-                    Text("No hay compromisos para este filtro.", color = TextoGris, fontSize = 14.sp)
+                item(key = "vacio") {
+                    Text(
+                        "No hay compromisos para este filtro.",
+                        color = TextoGris,
+                        fontSize = 14.sp,
+                        modifier = Modifier.animateItem()
+                    )
                 }
             }
 
@@ -136,6 +156,7 @@ fun CompromisosScreen(
                 val pagado = compromiso.estado == EstadoPago.PAGADO
                 Card(
                     modifier = Modifier
+                        .animateItem()
                         .fillMaxWidth()
                         .border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
                     shape = RoundedCornerShape(16.dp),
@@ -161,12 +182,19 @@ fun CompromisosScreen(
 
                         Spacer(modifier = Modifier.height(8.dp))
                         Button(
-                            onClick = { viewModel.registrarPago(compromiso) },
+                            onClick = {
+                                vibrador.confirmacion()
+                                viewModel.registrarPago(compromiso)
+                                mensajeConfirmacion = "Pago de la cuota ${compromiso.cuotaActual} de " +
+                                    "${compromiso.totalCuotas} (${compromiso.folio}) registrado."
+                            },
                             enabled = !pagado,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = AzulCorporativo)
                         ) {
-                            Text(if (pagado) "Pagado" else "Registrar pago", color = Color.White)
+                            AnimatedContent(targetState = pagado, label = "estadoBoton") { estaPagado ->
+                                Text(if (estaPagado) "Pagado" else "Registrar pago", color = Color.White)
+                            }
                         }
                     }
                 }

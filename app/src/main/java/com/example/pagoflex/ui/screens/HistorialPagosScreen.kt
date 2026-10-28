@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.example.pagoflex.ui.components.EstadoBadge
 import com.example.pagoflex.ui.util.formatearFechaHora
 import com.example.pagoflex.ui.util.formatearMonto
+import com.example.pagoflex.ui.util.rememberVibrador
 import com.example.pagoflex.viewmodel.HistorialViewModel
 import com.example.pagoflex.viewmodel.PeriodoHistorial
 
@@ -39,6 +40,7 @@ fun HistorialPagosScreen(
     val empresas by viewModel.empresas.collectAsState()
     val periodoSeleccionado by viewModel.periodo.collectAsState()
     val empresaSeleccionada by viewModel.empresa.collectAsState()
+    val vibrador = rememberVibrador()
 
     Scaffold(
         containerColor = FondoClaro,
@@ -89,7 +91,10 @@ fun HistorialPagosScreen(
                                 modifier = Modifier
                                     .background(if (sel) AzulCorporativo else TarjetaBlanca, RoundedCornerShape(20.dp))
                                     .border(1.dp, if (sel) AzulCorporativo else BordeGris, RoundedCornerShape(20.dp))
-                                    .clickable { viewModel.onPeriodoChange(p) }
+                                    .clickable {
+                                        vibrador.toque()
+                                        viewModel.onPeriodoChange(p)
+                                    }
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
                             ) {
                                 Text(p.etiqueta, color = if (sel) Color.White else TextoOscuro, fontSize = 13.sp)
@@ -110,7 +115,10 @@ fun HistorialPagosScreen(
                                 modifier = Modifier
                                     .background(if (sel) AzulCorporativo else TarjetaBlanca, RoundedCornerShape(20.dp))
                                     .border(1.dp, if (sel) AzulCorporativo else BordeGris, RoundedCornerShape(20.dp))
-                                    .clickable { viewModel.onEmpresaChange(e) }
+                                    .clickable {
+                                        vibrador.toque()
+                                        viewModel.onEmpresaChange(e)
+                                    }
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
                             ) {
                                 Text(e ?: "Todas", color = if (sel) Color.White else TextoOscuro, fontSize = 13.sp)
@@ -121,14 +129,20 @@ fun HistorialPagosScreen(
             }
 
             if (pagos.isEmpty()) {
-                item {
-                    Text("No hay pagos registrados en este período.", color = TextoGris, fontSize = 14.sp)
+                item(key = "vacio") {
+                    Text(
+                        "No hay pagos registrados en este período.",
+                        color = TextoGris,
+                        fontSize = 14.sp,
+                        modifier = Modifier.animateItem()
+                    )
                 }
             }
 
             items(pagos, key = { it.id }) { pago ->
                 Card(
                     modifier = Modifier
+                        .animateItem()
                         .fillMaxWidth()
                         .border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
                     shape = RoundedCornerShape(16.dp),
