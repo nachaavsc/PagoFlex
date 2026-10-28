@@ -1,12 +1,16 @@
 package com.example.pagoflex.navegation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.pagoflex.ui.screens.*
+import com.example.pagoflex.viewmodel.CompromisosViewModel
 import com.example.pagoflex.viewmodel.FormularioViewModel
+import com.example.pagoflex.viewmodel.HistorialViewModel
 import com.example.pagoflex.viewmodel.HomeViewModel
+import com.example.pagoflex.viewmodel.IncidenciasViewModel
 
 @Composable
 fun AppNavigation(
@@ -45,19 +49,21 @@ fun AppNavigation(
 
         composable("compromisos") {
             CompromisosScreen(
-                viewModel = homeViewModel,
+                viewModel = viewModel<CompromisosViewModel>(),
                 onVolver = { navController.popBackStack() }
             )
         }
 
         composable("historial") {
             HistorialPagosScreen(
+                viewModel = viewModel<HistorialViewModel>(),
                 onVolver = { navController.popBackStack() }
             )
         }
 
         composable("incidencias") {
             ReporteIncidenciasScreen(
+                viewModel = viewModel<IncidenciasViewModel>(),
                 onVolver = { navController.popBackStack() }
             )
         }

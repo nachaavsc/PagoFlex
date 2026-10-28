@@ -15,15 +15,10 @@ import kotlinx.coroutines.launch
 
 class FormularioViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository: PagoFlexRepository
+    private val repository = PagoFlexRepository(AppDatabase.getDatabase(application))
 
     private val _uiState = MutableStateFlow(FormularioUIState())
     val uiState: StateFlow<FormularioUIState> = _uiState.asStateFlow()
-
-    init {
-        val dao = AppDatabase.getDatabase(application).transaccionDao()
-        repository = PagoFlexRepository(dao)
-    }
 
     fun onNombreChange(nuevoNombre: String) {
         _uiState.update { it.copy(nombre = nuevoNombre, nombreError = null) }

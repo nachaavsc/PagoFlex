@@ -16,6 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.ui.util.formatearFechaHora
+import com.example.pagoflex.ui.util.formatearMonto
+import com.example.pagoflex.viewmodel.HistorialViewModel
+import com.example.pagoflex.viewmodel.PeriodoHistorial
 
 private val FondoClaro = Color(0xFFF8FAFC)
 private val AzulCorporativo = Color(0xFF0284C7)
@@ -27,10 +31,13 @@ private val TextoGris = Color(0xFF64748B)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistorialPagosScreen(
+    viewModel: HistorialViewModel,
     onVolver: () -> Unit
 ) {
-    var periodoSeleccionado by remember { mutableStateOf("Último mes") }
-    var empresaSeleccionada by remember { mutableStateOf("Todas") }
+    val pagos by viewModel.pagos.collectAsState()
+    val empresas by viewModel.empresas.collectAsState()
+    val periodoSeleccionado by viewModel.periodo.collectAsState()
+    val empresaSeleccionada by viewModel.empresa.collectAsState()
 
     Scaffold(
         containerColor = FondoClaro,
@@ -75,17 +82,16 @@ fun HistorialPagosScreen(
                     Text("Filtrar por período:", fontWeight = FontWeight.Bold, color = TextoOscuro)
                     Spacer(modifier = Modifier.height(6.dp))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val periodos = listOf("Último mes", "3 meses", "12 meses")
-                        items(periodos) { p ->
+                        items(PeriodoHistorial.entries) { p ->
                             val sel = periodoSeleccionado == p
                             Box(
                                 modifier = Modifier
                                     .background(if (sel) AzulCorporativo else TarjetaBlanca, RoundedCornerShape(20.dp))
                                     .border(1.dp, if (sel) AzulCorporativo else BordeGris, RoundedCornerShape(20.dp))
-                                    .clickable { periodoSeleccionado = p }
+                                    .clickable { viewModel.onPeriodoChange(p) }
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
                             ) {
-                                Text(p, color = if (sel) Color.White else TextoOscuro, fontSize = 13.sp)
+                                Text(p.etiqueta, color = if (sel) Color.White else TextoOscuro, fontSize = 13.sp)
                             }
                         }
                     }
@@ -97,24 +103,30 @@ fun HistorialPagosScreen(
                     Text("Filtrar por empresa:", fontWeight = FontWeight.Bold, color = TextoOscuro)
                     Spacer(modifier = Modifier.height(6.dp))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        val empresas = listOf("Todas", "Altos del Maipo")
-                        items(empresas) { e ->
+                        // null represents the "Todas" option.
+                        items(listOf<String?>(null) + empresas) { e ->
                             val sel = empresaSeleccionada == e
                             Box(
                                 modifier = Modifier
                                     .background(if (sel) AzulCorporativo else TarjetaBlanca, RoundedCornerShape(20.dp))
                                     .border(1.dp, if (sel) AzulCorporativo else BordeGris, RoundedCornerShape(20.dp))
-                                    .clickable { empresaSeleccionada = e }
+                                    .clickable { viewModel.onEmpresaChange(e) }
                                     .padding(horizontal = 16.dp, vertical = 8.dp)
                             ) {
-                                Text(e, color = if (sel) Color.White else TextoOscuro, fontSize = 13.sp)
+                                Text(e ?: "Todas", color = if (sel) Color.White else TextoOscuro, fontSize = 13.sp)
                             }
                         }
                     }
                 }
             }
 
-            item {
+            if (pagos.isEmpty()) {
+                item {
+                    Text("No hay pagos registrados en este período.", color = TextoGris, fontSize = 14.sp)
+                }
+            }
+
+            items(pagos, key = { it.id }) { pago ->
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -130,16 +142,16 @@ fun HistorialPagosScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Altos del Maipo", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
-                            Text("CONFIRMADO", fontWeight = FontWeight.Bold, color = AzulCorporativo, fontSize = 12.sp)
+                            Text(pago.empresa, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
+                            Text(pago.estado.uppercase(), fontWeight = FontWeight.Bold, color = AzulCorporativo, fontSize = 12.sp)
                         }
-                        Text("Concepto: Crédito de consumo", color = TextoGris, fontSize = 13.sp)
-                        Text("Cuota: 2 de 6", color = TextoOscuro, fontSize = 13.sp)
-                        Text("Canal de procedencia: App Móvil PagoFlex", color = AzulCorporativo, fontSize = 12.sp)
-                        Text("Fecha: 27-10-2026 02:19", color = TextoGris, fontSize = 12.sp)
-                        Text("Folio: PF-0002", color = TextoGris, fontSize = 12.sp)
-                        Text("Total pagado: \$45.000", fontWeight = FontWeight.Bold, color = AzulCorporativo)
-                        Text("Comprobante: PF-PAGO-1793078375283", color = TextoGris, fontSize = 11.sp)
+                        Text("Concepto: ${pago.concepto}", color = TextoGris, fontSize = 13.sp)
+                        Text("Cuota: ${pago.cuotaActual} de ${pago.totalCuotas}", color = TextoOscuro, fontSize = 13.sp)
+                        Text("Canal de procedencia: ${pago.canal}", color = AzulCorporativo, fontSize = 12.sp)
+                        Text("Fecha: ${formatearFechaHora(pago.fechaPago)}", color = TextoGris, fontSize = 12.sp)
+                        Text("Folio: ${pago.folio}", color = TextoGris, fontSize = 12.sp)
+                        Text("Total pagado: ${formatearMonto(pago.monto)}", fontWeight = FontWeight.Bold, color = AzulCorporativo)
+                        Text("Comprobante: ${pago.comprobante}", color = TextoGris, fontSize = 11.sp)
                     }
                 }
             }

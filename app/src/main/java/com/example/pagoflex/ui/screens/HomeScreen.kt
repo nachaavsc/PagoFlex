@@ -3,6 +3,7 @@ package com.example.pagoflex.ui.screens
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,6 +13,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.data.local.CompromisoEntity
+import com.example.pagoflex.data.local.EstadoPago
+import com.example.pagoflex.ui.util.formatearFecha
+import com.example.pagoflex.ui.util.formatearMonto
 import com.example.pagoflex.viewmodel.HomeViewModel
 
 private val FondoClaro = Color(0xFFF8FAFC)
@@ -23,14 +28,6 @@ private val TextoRojo = Color(0xFF991B1B)
 private val TextoOscuro = Color(0xFF0F172A)
 private val TextoGris = Color(0xFF64748B)
 
-data class CuentaDetalle(
-    val empresa: String,
-    val detalle: String,
-    val monto: String,
-    val fecha: String,
-    val folio: String
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -41,7 +38,8 @@ fun HomeScreen(
     onNavegarHistorial: () -> Unit,
     onNavegarIncidencias: () -> Unit
 ) {
-    var cuentaSeleccionada by remember { mutableStateOf<CuentaDetalle?>(null) }
+    val uiState by viewModel.uiState.collectAsState()
+    var cuentaSeleccionada by remember { mutableStateOf<CompromisoEntity?>(null) }
 
     Scaffold(
         containerColor = FondoClaro,
@@ -89,14 +87,16 @@ fun HomeScreen(
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(
-                            "$105.000",
+                            formatearMonto(uiState.totalPorPagar),
                             color = Color.White,
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            "Próximo vencimiento: 05-10-2026",
+                            uiState.proximoVencimiento
+                                ?.let { "Próximo vencimiento: ${formatearFecha(it)}" }
+                                ?: "Sin vencimientos próximos",
                             color = Color.White.copy(alpha = 0.9f),
                             fontSize = 14.sp
                         )
@@ -104,22 +104,26 @@ fun HomeScreen(
                 }
             }
 
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = FondoAlertaRojo)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(14.dp),
-                        verticalAlignment = Alignment.CenterVertically
+            if (uiState.cantidadVencidos > 0) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = FondoAlertaRojo)
                     ) {
-                        Text(
-                            "Tienes 1 compromiso de pago vencido.",
-                            color = TextoRojo,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp
-                        )
+                        Row(
+                            modifier = Modifier.padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val vencidos = uiState.cantidadVencidos
+                            Text(
+                                if (vencidos == 1) "Tienes 1 compromiso de pago vencido."
+                                else "Tienes $vencidos compromisos de pago vencidos.",
+                                color = TextoRojo,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 14.sp
+                            )
+                        }
                     }
                 }
             }
@@ -162,39 +166,14 @@ fun HomeScreen(
                 )
             }
 
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth().border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = TarjetaBlanca)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Club Los Halcones", fontWeight = FontWeight.Bold, color = TextoOscuro)
-                            Text("$17.000", fontWeight = FontWeight.Bold, color = TextoRojo)
-                        }
-                        Text("Cuota 10/12 • Vence: 05-10-2026 (Vencida)", color = TextoGris, fontSize = 12.sp)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Button(
-                            onClick = {
-                                cuentaSeleccionada = CuentaDetalle(
-                                    empresa = "Club Los Halcones",
-                                    detalle = "Cuota 10/12",
-                                    monto = "$17.000",
-                                    fecha = "05-10-2026 (Vencida)",
-                                    folio = "PF-0010"
-                                )
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = AzulCorporativo)
-                        ) {
-                            Text("Ver detalle para pagar", color = Color.White)
-                        }
-                    }
+            if (uiState.cuentasPorPagar.isEmpty()) {
+                item {
+                    Text("No tienes cuentas pendientes.", color = TextoGris, fontSize = 14.sp)
                 }
             }
 
-            item {
+            items(uiState.cuentasPorPagar, key = { it.id }) { cuenta ->
+                val vencida = cuenta.estado == EstadoPago.VENCIDO
                 Card(
                     modifier = Modifier.fillMaxWidth().border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
                     shape = RoundedCornerShape(16.dp),
@@ -202,21 +181,23 @@ fun HomeScreen(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Plaza Oriente", fontWeight = FontWeight.Bold, color = TextoOscuro)
-                            Text("$520.000", fontWeight = FontWeight.Bold, color = AzulCorporativo)
+                            Text(cuenta.empresa, fontWeight = FontWeight.Bold, color = TextoOscuro)
+                            Text(
+                                formatearMonto(cuenta.monto),
+                                fontWeight = FontWeight.Bold,
+                                color = if (vencida) TextoRojo else AzulCorporativo
+                            )
                         }
-                        Text("Arriendo octubre • Vence: 10-10-2026", color = TextoGris, fontSize = 12.sp)
+                        Text(
+                            "Cuota ${cuenta.cuotaActual}/${cuenta.totalCuotas} • Vence: " +
+                                formatearFecha(cuenta.fechaVencimiento) +
+                                if (vencida) " (Vencida)" else "",
+                            color = TextoGris,
+                            fontSize = 12.sp
+                        )
                         Spacer(modifier = Modifier.height(12.dp))
                         Button(
-                            onClick = {
-                                cuentaSeleccionada = CuentaDetalle(
-                                    empresa = "Plaza Oriente",
-                                    detalle = "Arriendo octubre",
-                                    monto = "$520.000",
-                                    fecha = "10-10-2026",
-                                    folio = "PF-0011"
-                                )
-                            },
+                            onClick = { cuentaSeleccionada = cuenta },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = AzulCorporativo)
                         ) {
@@ -245,12 +226,17 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Text(text = "Empresa: ${cuenta.empresa}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
-                    Text(text = "Concepto: ${cuenta.detalle}", fontSize = 14.sp, color = TextoGris)
+                    Text(text = "Concepto: ${cuenta.concepto}", fontSize = 14.sp, color = TextoGris)
+                    Text(text = "Cuota: ${cuenta.cuotaActual} de ${cuenta.totalCuotas}", fontSize = 14.sp, color = TextoGris)
                     Text(text = "Folio de Cobro: ${cuenta.folio}", fontSize = 14.sp, color = TextoGris)
-                    Text(text = "Fecha Vencimiento: ${cuenta.fecha}", fontSize = 14.sp, color = TextoGris)
+                    Text(
+                        text = "Fecha Vencimiento: ${formatearFecha(cuenta.fechaVencimiento)} (${cuenta.estado})",
+                        fontSize = 14.sp,
+                        color = TextoGris
+                    )
                     Divider(color = BordeGris)
                     Text(
-                        text = "Monto Total: ${cuenta.monto}",
+                        text = "Monto Total: ${formatearMonto(cuenta.monto)}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
                         color = AzulCorporativo
