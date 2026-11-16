@@ -7,6 +7,7 @@ import com.example.pagoflex.data.local.CompromisoEntity
 import com.example.pagoflex.data.local.EstadoPago
 import com.example.pagoflex.data.local.PagoEntity
 import com.example.pagoflex.data.repository.PagoFlexRepository
+import com.example.pagoflex.notificaciones.GestorNotificaciones
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +23,10 @@ data class ConfirmarPagoUIState(
     val pagoRegistrado: PagoEntity? = null
 )
 
-class ConfirmarPagoViewModel(private val repository: PagoFlexRepository) : ViewModel() {
+class ConfirmarPagoViewModel(
+    private val repository: PagoFlexRepository,
+    private val notificaciones: GestorNotificaciones
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ConfirmarPagoUIState())
     val uiState: StateFlow<ConfirmarPagoUIState> = _uiState.asStateFlow()
@@ -62,6 +66,7 @@ class ConfirmarPagoViewModel(private val repository: PagoFlexRepository) : ViewM
                         pagoRegistrado = pago
                     )
                 }
+                notificaciones.notificarPago(pago)
                 _eventos.send(EventoUI.Exito("Pago registrado con éxito"))
             } catch (e: SQLException) {
                 _uiState.update { it.copy(cargando = false) }

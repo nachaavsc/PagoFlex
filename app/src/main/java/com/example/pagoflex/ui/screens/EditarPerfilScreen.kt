@@ -1,13 +1,21 @@
 package com.example.pagoflex.ui.screens
 
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.text.input.KeyboardType
 import com.example.pagoflex.ui.components.BannerConfirmacion
 import com.example.pagoflex.ui.components.BotonPrimario
 import com.example.pagoflex.ui.components.CampoTexto
+import com.example.pagoflex.ui.components.EfectoEventos
 import com.example.pagoflex.ui.components.PantallaFormulario
+import com.example.pagoflex.ui.components.SelectorFotoPerfil
+import com.example.pagoflex.ui.components.SnackbarPagoFlex
+import com.example.pagoflex.ui.util.rememberVibrador
+import com.example.pagoflex.viewmodel.EventoUI
 import com.example.pagoflex.viewmodel.PerfilViewModel
 
 @Composable
@@ -16,9 +24,31 @@ fun EditarPerfilScreen(
     onVolver: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+    val foto by viewModel.fotoPerfil.collectAsState()
     val formularioActivo = !state.cargando && state.mensajeExito == null
+    val vibrador = rememberVibrador()
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    PantallaFormulario(titulo = "Editar perfil", onVolver = onVolver) {
+    EfectoEventos(viewModel.eventos, snackbarHostState) { evento ->
+        if (evento is EventoUI.Exito) vibrador.confirmacion()
+    }
+
+    LaunchedEffect(state.mensajeExito) {
+        if (state.mensajeExito != null) vibrador.confirmacion()
+    }
+
+    PantallaFormulario(
+        titulo = "Editar perfil",
+        onVolver = onVolver,
+        snackbarHost = { SnackbarPagoFlex(snackbarHostState) }
+    ) {
+        SelectorFotoPerfil(
+            foto = foto,
+            onFotoTomada = viewModel::onFotoTomada,
+            onImagenSeleccionada = viewModel::onImagenSeleccionada,
+            onError = viewModel::onErrorFoto,
+            habilitado = formularioActivo
+        )
         CampoTexto(
             valor = state.nombre,
             onValorChange = viewModel::onNombreChange,

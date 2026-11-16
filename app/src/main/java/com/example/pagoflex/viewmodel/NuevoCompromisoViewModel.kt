@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pagoflex.data.local.UsuarioEntity
 import com.example.pagoflex.data.repository.PagoFlexRepository
+import com.example.pagoflex.notificaciones.GestorNotificaciones
 import com.example.pagoflex.model.NuevoCompromisoUIState
 import com.example.pagoflex.model.Validador
 import kotlinx.coroutines.channels.Channel
@@ -17,7 +18,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class NuevoCompromisoViewModel(private val repository: PagoFlexRepository) : ViewModel() {
+class NuevoCompromisoViewModel(
+    private val repository: PagoFlexRepository,
+    private val notificaciones: GestorNotificaciones
+) : ViewModel() {
 
     val clientes: StateFlow<List<UsuarioEntity>> = repository.clientes
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -87,6 +91,7 @@ class NuevoCompromisoViewModel(private val repository: PagoFlexRepository) : Vie
                 monto = state.monto.trim().toLong(),
                 fechaVencimiento = fechaVencimiento
             )
+            notificaciones.notificarCompromisoAsignado(compromiso, state.clienteNombre)
             _uiState.value = NuevoCompromisoUIState()
             _eventos.send(EventoUI.Exito("Compromiso ${compromiso.folio} asignado a ${state.clienteNombre}"))
         }

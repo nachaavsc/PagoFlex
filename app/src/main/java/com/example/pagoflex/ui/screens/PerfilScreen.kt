@@ -1,14 +1,8 @@
 package com.example.pagoflex.ui.screens
 
-import android.graphics.Bitmap
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -18,13 +12,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.local.RolUsuario
+import com.example.pagoflex.ui.components.AvatarUsuario
 import com.example.pagoflex.ui.theme.*
 import com.example.pagoflex.viewmodel.PerfilViewModel
 
@@ -38,16 +30,7 @@ fun PerfilScreen(
     onCerrarSesion: () -> Unit
 ) {
     val usuario by viewModel.usuario.collectAsState()
-    val context = LocalContext.current
-    var fotoBitmap by remember { mutableStateOf<Bitmap?>(null) }
-
-    val launcherCamara = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicturePreview()
-    ) { bitmap ->
-        if (bitmap != null) {
-            fotoBitmap = bitmap
-        }
-    }
+    val foto by viewModel.fotoPerfil.collectAsState()
 
     Scaffold(
         containerColor = FondoClaro,
@@ -83,32 +66,7 @@ fun PerfilScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            Box(
-                modifier = Modifier
-                    .size(130.dp)
-                    .clip(CircleShape)
-                    .background(AzulSuave)
-                    .border(2.dp, AzulCorporativo, CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                if (fotoBitmap != null) {
-                    Image(
-                        bitmap = fotoBitmap!!.asImageBitmap(),
-                        contentDescription = "Foto de Perfil",
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } else {
-                    Text(
-                        text = "Sin Foto",
-                        color = AzulCorporativo,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
-                }
-            }
+            AvatarUsuario(foto = foto, tamano = 130.dp)
 
             Text(
                 text = usuario?.nombre ?: "Usuario PagoFlex",
@@ -132,20 +90,6 @@ fun PerfilScreen(
                     .background(AzulSuave, RoundedCornerShape(12.dp))
                     .padding(horizontal = 12.dp, vertical = 4.dp)
             )
-
-            Button(
-                onClick = {
-                    try {
-                        launcherCamara.launch(null)
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "No se pudo abrir la cámara en este dispositivo", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = AzulCorporativo),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text("Tomar Foto con Cámara", color = Color.White, fontWeight = FontWeight.Bold)
-            }
 
             ElevatedCard(
                 modifier = Modifier

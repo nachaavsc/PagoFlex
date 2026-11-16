@@ -18,6 +18,8 @@ import com.example.pagoflex.ui.components.PantallaFormulario
 import com.example.pagoflex.ui.components.SnackbarPagoFlex
 import com.example.pagoflex.ui.theme.TextoGris
 import com.example.pagoflex.ui.theme.TextoOscuro
+import com.example.pagoflex.ui.util.rememberVibrador
+import com.example.pagoflex.viewmodel.EventoUI
 import com.example.pagoflex.viewmodel.NuevoCompromisoViewModel
 
 @Composable
@@ -28,8 +30,11 @@ fun NuevoCompromisoScreen(
     val state by viewModel.uiState.collectAsState()
     val clientes by viewModel.clientes.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val vibrador = rememberVibrador()
 
-    EfectoEventos(viewModel.eventos, snackbarHostState)
+    EfectoEventos(viewModel.eventos, snackbarHostState) { evento ->
+        if (evento is EventoUI.Exito) vibrador.confirmacion()
+    }
 
     PantallaFormulario(
         titulo = "Nuevo compromiso",

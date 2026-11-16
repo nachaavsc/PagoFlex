@@ -35,6 +35,8 @@ import com.example.pagoflex.ui.theme.TextoOscuro
 import com.example.pagoflex.ui.theme.VerdeOscuro
 import com.example.pagoflex.ui.theme.VerdeSuave
 import com.example.pagoflex.ui.util.formatearFecha
+import com.example.pagoflex.ui.util.rememberVibrador
+import com.example.pagoflex.viewmodel.EventoUI
 import com.example.pagoflex.ui.util.formatearFechaHora
 import com.example.pagoflex.ui.util.formatearMonto
 import com.example.pagoflex.viewmodel.ConfirmarPagoViewModel
@@ -48,9 +50,12 @@ fun ConfirmarPagoScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val vibrador = rememberVibrador()
 
     LaunchedEffect(compromisoId) { viewModel.cargar(compromisoId) }
-    EfectoEventos(viewModel.eventos, snackbarHostState)
+    EfectoEventos(viewModel.eventos, snackbarHostState) { evento ->
+        if (evento is EventoUI.Exito) vibrador.confirmacion()
+    }
 
     PantallaFormulario(
         titulo = "Confirmar pago",
