@@ -1,0 +1,21 @@
+package com.example.pagoflex.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.example.pagoflex.data.repository.PagoFlexRepository
+
+class PagoFlexViewModelFactory(
+    private val repository: PagoFlexRepository
+) : ViewModelProvider.Factory {
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T = when {
+        modelClass.isAssignableFrom(HomeViewModel::class.java) -> HomeViewModel(repository)
+        modelClass.isAssignableFrom(FormularioViewModel::class.java) -> FormularioViewModel(repository)
+        modelClass.isAssignableFrom(CompromisosViewModel::class.java) -> CompromisosViewModel(repository)
+        modelClass.isAssignableFrom(HistorialViewModel::class.java) -> HistorialViewModel(repository)
+        modelClass.isAssignableFrom(IncidenciasViewModel::class.java) -> IncidenciasViewModel(repository)
+        modelClass.isAssignableFrom(PerfilViewModel::class.java) -> PerfilViewModel(repository)
+        else -> throw IllegalArgumentException("ViewModel no soportado: ${modelClass.name}")
+    } as T
+}

@@ -1,9 +1,7 @@
 package com.example.pagoflex.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pagoflex.data.local.AppDatabase
 import com.example.pagoflex.data.local.TransaccionEntity
 import com.example.pagoflex.data.repository.PagoFlexRepository
 import com.example.pagoflex.model.FormularioUIState
@@ -13,9 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class FormularioViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository = PagoFlexRepository(AppDatabase.getDatabase(application))
+class FormularioViewModel(private val repository: PagoFlexRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FormularioUIState())
     val uiState: StateFlow<FormularioUIState> = _uiState.asStateFlow()
@@ -53,7 +49,7 @@ class FormularioViewModel(application: Application) : AndroidViewModel(applicati
             val nuevaTransaccion = TransaccionEntity(
                 concepto = "Pago a ${state.nombre}",
                 monto = state.monto.toDoubleOrNull() ?: 0.0,
-                fecha = "2026-10-27",
+                fecha = System.currentTimeMillis(),
                 estado = "Completado"
             )
             repository.agregarTransaccion(nuevaTransaccion)

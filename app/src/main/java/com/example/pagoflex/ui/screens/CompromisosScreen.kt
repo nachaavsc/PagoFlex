@@ -171,7 +171,7 @@ fun CompromisosScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(compromiso.empresa, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
+                            Text(compromiso.organizacion, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
                             EstadoBadge(compromiso.estado)
                         }
                         Text(compromiso.concepto, color = TextoGris, fontSize = 13.sp)

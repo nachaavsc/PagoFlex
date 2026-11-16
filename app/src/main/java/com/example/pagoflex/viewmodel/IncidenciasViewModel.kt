@@ -1,9 +1,7 @@
 package com.example.pagoflex.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pagoflex.data.local.AppDatabase
 import com.example.pagoflex.data.local.IncidenciaEntity
 import com.example.pagoflex.data.repository.PagoFlexRepository
 import kotlinx.coroutines.flow.SharingStarted
@@ -11,9 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-class IncidenciasViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository = PagoFlexRepository(AppDatabase.getDatabase(application))
+class IncidenciasViewModel(private val repository: PagoFlexRepository) : ViewModel() {
 
     val incidencias: StateFlow<List<IncidenciaEntity>> = repository.incidencias
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

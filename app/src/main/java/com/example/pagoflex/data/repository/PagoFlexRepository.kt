@@ -3,14 +3,17 @@ package com.example.pagoflex.data.repository
 import androidx.room.withTransaction
 import com.example.pagoflex.data.local.AppDatabase
 import com.example.pagoflex.data.local.CompromisoEntity
-import com.example.pagoflex.data.local.EstadoPago
 import com.example.pagoflex.data.local.IncidenciaEntity
 import com.example.pagoflex.data.local.PagoEntity
+import com.example.pagoflex.data.local.RolUsuario
 import com.example.pagoflex.data.local.TransaccionEntity
+import com.example.pagoflex.data.local.UsuarioEntity
+import com.example.pagoflex.data.local.generarPago
 import kotlinx.coroutines.flow.Flow
 
 class PagoFlexRepository(private val db: AppDatabase) {
 
+    private val usuarioDao = db.usuarioDao()
     private val transaccionDao = db.transaccionDao()
     private val compromisoDao = db.compromisoDao()
     private val pagoDao = db.pagoDao()
@@ -20,39 +23,64 @@ class PagoFlexRepository(private val db: AppDatabase) {
 
     val compromisos: Flow<List<CompromisoEntity>> = compromisoDao.observarTodos()
 
-    val compromisosNoPagados: Flow<List<CompromisoEntity>> =
-        compromisoDao.observarExcluyendoEstado(EstadoPago.PAGADO)
+    val compromisosNoPagados: Flow<List<CompromisoEntity>> = compromisoDao.observarNoPagados()
 
-    val empresasConPagos: Flow<List<String>> = pagoDao.observarEmpresas()
+    val organizacionesConPagos: Flow<List<String>> = pagoDao.observarOrganizaciones()
 
     val incidencias: Flow<List<IncidenciaEntity>> = incidenciaDao.observarTodas()
+
+    val clientes: Flow<List<UsuarioEntity>> = usuarioDao.observarPorRol(RolUsuario.CLIENTE)
 
     fun compromisosPorEstado(estado: String?): Flow<List<CompromisoEntity>> =
         if (estado == null) compromisoDao.observarTodos() else compromisoDao.observarPorEstado(estado)
 
-    fun pagosFiltrados(desde: Long, empresa: String?): Flow<List<PagoEntity>> =
-        pagoDao.observarFiltrados(desde, empresa)
+    fun compromisosDeUsuario(usuarioId: Int): Flow<List<CompromisoEntity>> =
+        compromisoDao.observarPorUsuario(usuarioId)
+
+    fun compromisosNoPagadosDeUsuario(usuarioId: Int): Flow<List<CompromisoEntity>> =
+        compromisoDao.observarNoPagadosPorUsuario(usuarioId)
+
+    fun historialDeUsuario(usuarioId: Int): Flow<List<PagoEntity>> =
+        pagoDao.observarHistorialPorUsuario(usuarioId)
+
+    fun pagosFiltrados(desde: Long, organizacion: String?): Flow<List<PagoEntity>> =
+        pagoDao.observarFiltrados(desde, organizacion)
+
+    fun observarUsuario(id: Int): Flow<UsuarioEntity?> = usuarioDao.observarPorId(id)
+
+    suspend fun autenticar(correo: String, clave: String): UsuarioEntity? =
+        usuarioDao.autenticar(correo.trim().lowercase(), clave)
+
+    suspend fun obtenerUsuarioPorCorreo(correo: String): UsuarioEntity? =
+        usuarioDao.obtenerPorCorreo(correo.trim().lowercase())
+
+    suspend fun registrarUsuario(usuario: UsuarioEntity): Long =
+        usuarioDao.insertar(usuario.copy(correo = usuario.correo.trim().lowercase()))
+
+    suspend fun actualizarUsuario(usuario: UsuarioEntity) {
+        usuarioDao.actualizar(usuario.copy(correo = usuario.correo.trim().lowercase()))
+    }
+
+    suspend fun actualizarClave(usuarioId: Int, nuevaClave: String) {
+        usuarioDao.actualizarClave(usuarioId, nuevaClave)
+    }
+
+    suspend fun registrarCompromiso(compromiso: CompromisoEntity): Long =
+        compromisoDao.insertar(compromiso)
 
     suspend fun agregarTransaccion(transaccion: TransaccionEntity) {
         transaccionDao.insertarTransaccion(transaccion)
     }
 
-    suspend fun registrarPago(compromiso: CompromisoEntity, canal: String, ahora: Long) {
+    suspend fun registrarPago(
+        compromiso: CompromisoEntity,
+        canal: String,
+        ahora: Long,
+        rutaComprobanteFoto: String? = null
+    ) {
         db.withTransaction {
-            compromisoDao.actualizarEstado(compromiso.id, EstadoPago.PAGADO)
-            pagoDao.insertar(
-                PagoEntity(
-                    folio = compromiso.folio,
-                    empresa = compromiso.empresa,
-                    concepto = compromiso.concepto,
-                    cuotaActual = compromiso.cuotaActual,
-                    totalCuotas = compromiso.totalCuotas,
-                    monto = compromiso.monto,
-                    fechaPago = ahora,
-                    canal = canal,
-                    comprobante = "PF-PAGO-$ahora"
-                )
-            )
+            compromisoDao.marcarComoPagado(compromiso.id)
+            pagoDao.insertar(compromiso.generarPago(ahora, canal, rutaComprobanteFoto))
         }
     }
 

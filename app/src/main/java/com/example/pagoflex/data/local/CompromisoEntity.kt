@@ -1,24 +1,39 @@
 package com.example.pagoflex.data.local
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
 object EstadoPago {
-    const val PAGADO = "Pagado"
-    const val PENDIENTE = "Pendiente"
-    const val VENCIDO = "Vencido"
+    const val PENDIENTE = "PENDIENTE"
+    const val PAGADO = "PAGADO"
+    const val VENCIDO = "VENCIDO"
 }
 
 @Entity(
     tableName = "compromisos",
-    indices = [Index(value = ["folio"], unique = true), Index("estado"), Index("empresa")]
+    foreignKeys = [
+        ForeignKey(
+            entity = UsuarioEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["usuarioId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index(value = ["folio"], unique = true),
+        Index("usuarioId"),
+        Index("estado"),
+        Index("organizacion")
+    ]
 )
 data class CompromisoEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
+    val usuarioId: Int,
     val folio: String,
-    val empresa: String,
+    val organizacion: String,
     val concepto: String,
     val cuotaActual: Int,
     val totalCuotas: Int,

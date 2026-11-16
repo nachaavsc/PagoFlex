@@ -1,9 +1,7 @@
 package com.example.pagoflex.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pagoflex.data.local.AppDatabase
 import com.example.pagoflex.data.local.CompromisoEntity
 import com.example.pagoflex.data.repository.PagoFlexRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,9 +15,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class CompromisosViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository = PagoFlexRepository(AppDatabase.getDatabase(application))
+class CompromisosViewModel(private val repository: PagoFlexRepository) : ViewModel() {
 
     private val _filtroEstado = MutableStateFlow<String?>(null)
     val filtroEstado: StateFlow<String?> = _filtroEstado.asStateFlow()

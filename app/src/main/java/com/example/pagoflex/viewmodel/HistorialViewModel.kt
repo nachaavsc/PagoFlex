@@ -1,9 +1,7 @@
 package com.example.pagoflex.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pagoflex.data.local.AppDatabase
 import com.example.pagoflex.data.local.PagoEntity
 import com.example.pagoflex.data.repository.PagoFlexRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,9 +23,7 @@ enum class PeriodoHistorial(val etiqueta: String, val dias: Long) {
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class HistorialViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository = PagoFlexRepository(AppDatabase.getDatabase(application))
+class HistorialViewModel(private val repository: PagoFlexRepository) : ViewModel() {
 
     private val _periodo = MutableStateFlow(PeriodoHistorial.ULTIMO_MES)
     val periodo: StateFlow<PeriodoHistorial> = _periodo.asStateFlow()
@@ -35,7 +31,7 @@ class HistorialViewModel(application: Application) : AndroidViewModel(applicatio
     private val _empresa = MutableStateFlow<String?>(null)
     val empresa: StateFlow<String?> = _empresa.asStateFlow()
 
-    val empresas: StateFlow<List<String>> = repository.empresasConPagos
+    val empresas: StateFlow<List<String>> = repository.organizacionesConPagos
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val pagos: StateFlow<List<PagoEntity>> = combine(_periodo, _empresa) { periodo, empresa ->

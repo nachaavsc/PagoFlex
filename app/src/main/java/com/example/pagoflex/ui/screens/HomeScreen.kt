@@ -186,7 +186,7 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(cuenta.empresa, fontWeight = FontWeight.Bold, color = TextoOscuro)
+                            Text(cuenta.organizacion, fontWeight = FontWeight.Bold, color = TextoOscuro)
                             EstadoBadge(cuenta.estado)
                         }
                         Spacer(modifier = Modifier.height(4.dp))
@@ -231,7 +231,7 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text(text = "Empresa: ${cuenta.empresa}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
+                    Text(text = "Organización: ${cuenta.organizacion}", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
                     Text(text = "Concepto: ${cuenta.concepto}", fontSize = 14.sp, color = TextoGris)
                     Text(text = "Cuota: ${cuenta.cuotaActual} de ${cuenta.totalCuotas}", fontSize = 14.sp, color = TextoGris)
                     Text(text = "Folio de Cobro: ${cuenta.folio}", fontSize = 14.sp, color = TextoGris)

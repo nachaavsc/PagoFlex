@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.data.local.EstadoPago
 import com.example.pagoflex.ui.components.EstadoBadge
 import com.example.pagoflex.ui.util.formatearFechaHora
 import com.example.pagoflex.ui.util.formatearMonto
@@ -157,15 +158,15 @@ fun HistorialPagosScreen(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(pago.empresa, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
-                            EstadoBadge(pago.estado)
+                            Text(pago.organizacion, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
+                            EstadoBadge(EstadoPago.PAGADO)
                         }
                         Text("Concepto: ${pago.concepto}", color = TextoGris, fontSize = 13.sp)
                         Text("Cuota: ${pago.cuotaActual} de ${pago.totalCuotas}", color = TextoOscuro, fontSize = 13.sp)
                         Text("Canal de procedencia: ${pago.canal}", color = AzulCorporativo, fontSize = 12.sp)
                         Text("Fecha: ${formatearFechaHora(pago.fechaPago)}", color = TextoGris, fontSize = 12.sp)
                         Text("Folio: ${pago.folio}", color = TextoGris, fontSize = 12.sp)
-                        Text("Total pagado: ${formatearMonto(pago.monto)}", fontWeight = FontWeight.Bold, color = AzulCorporativo)
+                        Text("Total pagado: ${formatearMonto(pago.montoPagado)}", fontWeight = FontWeight.Bold, color = AzulCorporativo)
                         Text("Comprobante: ${pago.comprobante}", color = TextoGris, fontSize = 11.sp)
                     }
                 }

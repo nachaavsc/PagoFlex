@@ -1,7 +1,7 @@
 package com.example.pagoflex.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import com.example.pagoflex.data.repository.PagoFlexRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,7 +12,7 @@ data class PerfilUIState(
     val cuentaActiva: Boolean = true
 )
 
-class PerfilViewModel(application: Application) : AndroidViewModel(application) {
+class PerfilViewModel(private val repository: PagoFlexRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PerfilUIState())
     val uiState: StateFlow<PerfilUIState> = _uiState.asStateFlow()

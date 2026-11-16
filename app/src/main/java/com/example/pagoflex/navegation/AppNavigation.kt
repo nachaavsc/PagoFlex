@@ -1,6 +1,7 @@
 package com.example.pagoflex.navegation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -14,6 +15,7 @@ import com.example.pagoflex.viewmodel.IncidenciasViewModel
 
 @Composable
 fun AppNavigation(
+    factory: ViewModelProvider.Factory,
     homeViewModel: HomeViewModel,
     formularioViewModel: FormularioViewModel
 ) {
@@ -49,21 +51,21 @@ fun AppNavigation(
 
         composable("compromisos") {
             CompromisosScreen(
-                viewModel = viewModel<CompromisosViewModel>(),
+                viewModel = viewModel<CompromisosViewModel>(factory = factory),
                 onVolver = { navController.popBackStack() }
             )
         }
 
         composable("historial") {
             HistorialPagosScreen(
-                viewModel = viewModel<HistorialViewModel>(),
+                viewModel = viewModel<HistorialViewModel>(factory = factory),
                 onVolver = { navController.popBackStack() }
             )
         }
 
         composable("incidencias") {
             ReporteIncidenciasScreen(
-                viewModel = viewModel<IncidenciasViewModel>(),
+                viewModel = viewModel<IncidenciasViewModel>(factory = factory),
                 onVolver = { navController.popBackStack() }
             )
         }

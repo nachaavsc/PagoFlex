@@ -18,7 +18,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val factory = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+        val factory = (application as PagoFlexApplication).viewModelFactory
         val homeViewModel = ViewModelProvider(this, factory)[HomeViewModel::class.java]
         val formularioViewModel = ViewModelProvider(this, factory)[FormularioViewModel::class.java]
 
@@ -29,6 +29,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     AppNavigation(
+                        factory = factory,
                         homeViewModel = homeViewModel,
                         formularioViewModel = formularioViewModel
                     )

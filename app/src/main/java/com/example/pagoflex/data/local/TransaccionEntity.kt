@@ -9,6 +9,6 @@ data class TransaccionEntity(
     val id: Int = 0,
     val concepto: String,
     val monto: Double,
-    val fecha: String = "2026-10-25",
+    val fecha: Long = System.currentTimeMillis(),
     val estado: String = "Completado"
 )

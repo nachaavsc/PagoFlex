@@ -1,9 +1,7 @@
 package com.example.pagoflex.viewmodel
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pagoflex.data.local.AppDatabase
 import com.example.pagoflex.data.local.CompromisoEntity
 import com.example.pagoflex.data.local.EstadoPago
 import com.example.pagoflex.data.repository.PagoFlexRepository
@@ -21,9 +19,7 @@ data class HomeUiState(
     val cuentasPorPagar: List<CompromisoEntity> = emptyList()
 )
 
-class HomeViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val repository = PagoFlexRepository(AppDatabase.getDatabase(application))
+class HomeViewModel(private val repository: PagoFlexRepository) : ViewModel() {
 
     val uiState: StateFlow<HomeUiState> = repository.compromisosNoPagados
         .map { cuentas ->

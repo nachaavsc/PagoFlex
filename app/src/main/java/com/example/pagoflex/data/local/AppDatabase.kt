@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.withTransaction
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -12,26 +13,33 @@ import kotlinx.coroutines.launch
 
 @Database(
     entities = [
+        UsuarioEntity::class,
         TransaccionEntity::class,
         CompromisoEntity::class,
         PagoEntity::class,
         IncidenciaEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
 
+    abstract fun usuarioDao(): UsuarioDao
     abstract fun transaccionDao(): TransaccionDao
     abstract fun compromisoDao(): CompromisoDao
     abstract fun pagoDao(): PagoDao
     abstract fun incidenciaDao(): IncidenciaDao
 
     suspend fun precargarDatosIniciales() {
-        if (compromisoDao().contar() > 0) return
-        compromisoDao().insertarTodos(DatosIniciales.compromisos())
-        pagoDao().insertarTodos(DatosIniciales.pagos())
-        incidenciaDao().insertarTodas(DatosIniciales.incidencias())
+        if (usuarioDao().contar() > 0) return
+        withTransaction {
+            val usuarios = DatosIniciales.usuarios().map { it.copy(id = usuarioDao().insertar(it).toInt()) }
+            val clienteId = usuarios.first { it.rol == RolUsuario.CLIENTE }.id
+            val compromisos = DatosIniciales.compromisos(clienteId)
+                .map { it.copy(id = compromisoDao().insertar(it).toInt()) }
+            pagoDao().insertarTodos(DatosIniciales.pagos(compromisos))
+            incidenciaDao().insertarTodas(DatosIniciales.incidencias())
+        }
     }
 
     companion object {

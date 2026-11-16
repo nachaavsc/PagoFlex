@@ -14,21 +14,28 @@ interface PagoDao {
 
     @Query(
         """
+        SELECT pagos.* FROM pagos
+        INNER JOIN compromisos ON compromisos.id = pagos.compromisoId
+        WHERE compromisos.usuarioId = :usuarioId
+        ORDER BY pagos.fechaPago DESC
+        """
+    )
+    fun observarHistorialPorUsuario(usuarioId: Int): Flow<List<PagoEntity>>
+
+    @Query(
+        """
         SELECT * FROM pagos
-        WHERE fechaPago >= :desde AND (:empresa IS NULL OR empresa = :empresa)
+        WHERE fechaPago >= :desde AND (:organizacion IS NULL OR organizacion = :organizacion)
         ORDER BY fechaPago DESC
         """
     )
-    fun observarFiltrados(desde: Long, empresa: String?): Flow<List<PagoEntity>>
+    fun observarFiltrados(desde: Long, organizacion: String?): Flow<List<PagoEntity>>
 
-    @Query("SELECT DISTINCT empresa FROM pagos ORDER BY empresa ASC")
-    fun observarEmpresas(): Flow<List<String>>
+    @Query("SELECT DISTINCT organizacion FROM pagos ORDER BY organizacion ASC")
+    fun observarOrganizaciones(): Flow<List<String>>
 
-    @Query("SELECT * FROM pagos WHERE estado = :estado ORDER BY fechaPago DESC")
-    suspend fun obtenerPorEstado(estado: String): List<PagoEntity>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertar(pago: PagoEntity)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertar(pago: PagoEntity): Long
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertarTodos(pagos: List<PagoEntity>)
