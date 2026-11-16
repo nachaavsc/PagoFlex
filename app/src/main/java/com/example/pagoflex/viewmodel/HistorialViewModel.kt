@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.util.concurrent.TimeUnit
 
@@ -25,19 +27,26 @@ enum class PeriodoHistorial(val etiqueta: String, val dias: Long) {
 @OptIn(ExperimentalCoroutinesApi::class)
 class HistorialViewModel(private val repository: PagoFlexRepository) : ViewModel() {
 
-    private val _periodo = MutableStateFlow(PeriodoHistorial.ULTIMO_MES)
+    private val _periodo = MutableStateFlow(PeriodoHistorial.TRES_MESES)
     val periodo: StateFlow<PeriodoHistorial> = _periodo.asStateFlow()
 
     private val _empresa = MutableStateFlow<String?>(null)
     val empresa: StateFlow<String?> = _empresa.asStateFlow()
 
-    val empresas: StateFlow<List<String>> = repository.organizacionesConPagos
+    private val historial: StateFlow<List<PagoEntity>> = repository.usuarioActual
+        .flatMapLatest { usuario ->
+            usuario?.let { repository.historialDeUsuario(it.id) } ?: flowOf(emptyList())
+        }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val pagos: StateFlow<List<PagoEntity>> = combine(_periodo, _empresa) { periodo, empresa ->
-        periodo.desde(System.currentTimeMillis()) to empresa
+    val empresas: StateFlow<List<String>> = historial
+        .map { pagos -> pagos.map { it.organizacion }.distinct().sorted() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val pagos: StateFlow<List<PagoEntity>> = combine(historial, _periodo, _empresa) { lista, periodo, empresa ->
+        val desde = periodo.desde(System.currentTimeMillis())
+        lista.filter { it.fechaPago >= desde && (empresa == null || it.organizacion == empresa) }
     }
-        .flatMapLatest { (desde, empresa) -> repository.pagosFiltrados(desde, empresa) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onPeriodoChange(periodo: PeriodoHistorial) {

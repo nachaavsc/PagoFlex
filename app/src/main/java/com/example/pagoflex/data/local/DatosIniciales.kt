@@ -104,10 +104,11 @@ object DatosIniciales {
         )
     }
 
-    fun incidencias(): List<IncidenciaEntity> {
+    fun incidencias(clienteId: Int): List<IncidenciaEntity> {
         val fechaReporte = fecha(-20, 9, 30)
         return listOf(
             IncidenciaEntity(
+                usuarioId = clienteId,
                 folio = "PF-INC-0001",
                 motivo = "Cobro duplicado",
                 detalle = "La cuota 2 de 6 (PF-0002) aparece cobrada dos veces en la cartola.",

@@ -45,10 +45,12 @@ fun PantallaFormulario(
     onVolver: (() -> Unit)?,
     encabezado: @Composable ColumnScope.() -> Unit = {},
     pie: @Composable ColumnScope.() -> Unit = {},
+    snackbarHost: @Composable () -> Unit = {},
     contenido: @Composable ColumnScope.() -> Unit
 ) {
     Scaffold(
         containerColor = FondoClaro,
+        snackbarHost = snackbarHost,
         topBar = {
             if (titulo != null) {
                 TopAppBar(

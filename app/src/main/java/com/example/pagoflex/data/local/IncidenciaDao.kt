@@ -12,11 +12,14 @@ interface IncidenciaDao {
     @Query("SELECT * FROM incidencias ORDER BY fechaReporte DESC")
     fun observarTodas(): Flow<List<IncidenciaEntity>>
 
-    @Query("SELECT * FROM incidencias WHERE estado = :estado ORDER BY fechaReporte DESC")
-    fun observarPorEstado(estado: String): Flow<List<IncidenciaEntity>>
+    @Query("SELECT * FROM incidencias WHERE usuarioId = :usuarioId ORDER BY fechaReporte DESC")
+    fun observarPorUsuario(usuarioId: Int): Flow<List<IncidenciaEntity>>
 
     @Query("SELECT COUNT(*) FROM incidencias")
     suspend fun contar(): Int
+
+    @Query("UPDATE incidencias SET estado = :estado WHERE id = :id")
+    suspend fun actualizarEstado(id: Int, estado: String)
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertar(incidencia: IncidenciaEntity): Long

@@ -4,18 +4,21 @@ import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import androidx.navigation.compose.rememberNavController
-import com.example.pagoflex.data.local.RolUsuario
 import com.example.pagoflex.ui.screens.*
 import com.example.pagoflex.viewmodel.CambiarClaveViewModel
 import com.example.pagoflex.viewmodel.CompromisosViewModel
+import com.example.pagoflex.viewmodel.ConfirmarPagoViewModel
 import com.example.pagoflex.viewmodel.FormularioViewModel
 import com.example.pagoflex.viewmodel.HistorialViewModel
 import com.example.pagoflex.viewmodel.HomeViewModel
 import com.example.pagoflex.viewmodel.IncidenciasViewModel
 import com.example.pagoflex.viewmodel.LoginViewModel
+import com.example.pagoflex.viewmodel.NuevoCompromisoViewModel
 import com.example.pagoflex.viewmodel.PerfilViewModel
 import com.example.pagoflex.viewmodel.RecuperarClaveViewModel
 import com.example.pagoflex.viewmodel.RegistroViewModel
@@ -35,7 +38,7 @@ fun AppNavigation(
         composable("login") {
             LoginScreen(
                 viewModel = viewModel<LoginViewModel>(factory = factory),
-                onIngresoExitoso = { rol -> navController.entrarComo(rol) },
+                onIngresoExitoso = { navController.entrarAlInicio() },
                 onCrearCuenta = { navController.navigate("registro") },
                 onRecuperarClave = { navController.navigate("recuperarClave") }
             )
@@ -44,7 +47,7 @@ fun AppNavigation(
         composable("registro") {
             RegistroScreen(
                 viewModel = viewModel<RegistroViewModel>(factory = factory),
-                onRegistroExitoso = { rol -> navController.entrarComo(rol) },
+                onRegistroExitoso = { navController.entrarAlInicio() },
                 onVolver = { navController.popBackStack() }
             )
         }
@@ -63,16 +66,32 @@ fun AppNavigation(
                 onNavegarPerfil = { navController.navigate("perfil") },
                 onNavegarCompromisos = { navController.navigate("compromisos") },
                 onNavegarHistorial = { navController.navigate("historial") },
-                onNavegarIncidencias = { navController.navigate("incidencias") }
+                onNavegarIncidencias = { navController.navigate("incidencias") },
+                onNavegarNuevoCompromiso = { navController.navigate("nuevoCompromiso") },
+                onPagar = { id -> navController.navigate("confirmarPago/$id") }
             )
         }
 
-        composable("gestor") {
-            CompromisosScreen(
-                viewModel = viewModel<CompromisosViewModel>(factory = factory),
-                titulo = "Compromisos de clientes",
-                textoVolver = "Perfil",
-                onVolver = { navController.navigate("perfil") }
+        composable(
+            route = "confirmarPago/{compromisoId}",
+            arguments = listOf(navArgument("compromisoId") { type = NavType.IntType })
+        ) { entrada ->
+            ConfirmarPagoScreen(
+                viewModel = viewModel<ConfirmarPagoViewModel>(factory = factory),
+                compromisoId = entrada.arguments?.getInt("compromisoId") ?: 0,
+                onVolver = { navController.popBackStack() },
+                onVerHistorial = {
+                    navController.navigate("historial") {
+                        popUpTo("home")
+                    }
+                }
+            )
+        }
+
+        composable("nuevoCompromiso") {
+            NuevoCompromisoScreen(
+                viewModel = viewModel<NuevoCompromisoViewModel>(factory = factory),
+                onVolver = { navController.popBackStack() }
             )
         }
 
@@ -114,7 +133,9 @@ fun AppNavigation(
         composable("compromisos") {
             CompromisosScreen(
                 viewModel = viewModel<CompromisosViewModel>(factory = factory),
-                onVolver = { navController.popBackStack() }
+                onVolver = { navController.popBackStack() },
+                onPagar = { id -> navController.navigate("confirmarPago/$id") },
+                onNuevoCompromiso = { navController.navigate("nuevoCompromiso") }
             )
         }
 
@@ -134,9 +155,8 @@ fun AppNavigation(
     }
 }
 
-private fun NavHostController.entrarComo(rol: String) {
-    val destino = if (rol == RolUsuario.GESTOR) "gestor" else "home"
-    navigate(destino) {
+private fun NavHostController.entrarAlInicio() {
+    navigate("home") {
         popUpTo("login") { inclusive = true }
     }
 }

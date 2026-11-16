@@ -31,28 +31,18 @@ fun CampoTexto(
     error: String? = null,
     tipoTeclado: KeyboardType = KeyboardType.Text,
     esClave: Boolean = false,
-    habilitado: Boolean = true
+    habilitado: Boolean = true,
+    lineasMinimas: Int = 1
 ) {
     OutlinedTextField(
         value = valor,
         onValueChange = onValorChange,
         label = { Text(etiqueta) },
-        singleLine = true,
+        singleLine = lineasMinimas == 1,
+        minLines = lineasMinimas,
         enabled = habilitado,
         isError = error != null,
-        supportingText = error?.let { mensaje ->
-            {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Filled.Warning,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(mensaje)
-                }
-            }
-        },
+        supportingText = error?.let { mensaje -> { MensajeCampo(mensaje) } },
         visualTransformation = if (esClave) PasswordVisualTransformation() else VisualTransformation.None,
         keyboardOptions = KeyboardOptions(
             keyboardType = if (esClave) KeyboardType.Password else tipoTeclado
@@ -69,4 +59,17 @@ fun CampoTexto(
         textStyle = MaterialTheme.typography.bodyLarge,
         modifier = modifier.fillMaxWidth()
     )
+}
+
+@Composable
+fun MensajeCampo(mensaje: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(
+            imageVector = Icons.Filled.Warning,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(mensaje)
+    }
 }

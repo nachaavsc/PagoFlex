@@ -20,6 +20,8 @@ class PagoFlexViewModelFactory(
         modelClass.isAssignableFrom(RegistroViewModel::class.java) -> RegistroViewModel(repository)
         modelClass.isAssignableFrom(RecuperarClaveViewModel::class.java) -> RecuperarClaveViewModel(repository)
         modelClass.isAssignableFrom(CambiarClaveViewModel::class.java) -> CambiarClaveViewModel(repository)
+        modelClass.isAssignableFrom(ConfirmarPagoViewModel::class.java) -> ConfirmarPagoViewModel(repository)
+        modelClass.isAssignableFrom(NuevoCompromisoViewModel::class.java) -> NuevoCompromisoViewModel(repository)
         else -> throw IllegalArgumentException("ViewModel no soportado: ${modelClass.name}")
     } as T
 }

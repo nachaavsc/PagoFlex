@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
         PagoEntity::class,
         IncidenciaEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -38,7 +38,7 @@ abstract class AppDatabase : RoomDatabase() {
             val compromisos = DatosIniciales.compromisos(clienteId)
                 .map { it.copy(id = compromisoDao().insertar(it).toInt()) }
             pagoDao().insertarTodos(DatosIniciales.pagos(compromisos))
-            incidenciaDao().insertarTodas(DatosIniciales.incidencias())
+            incidenciaDao().insertarTodas(DatosIniciales.incidencias(clienteId))
         }
     }
 

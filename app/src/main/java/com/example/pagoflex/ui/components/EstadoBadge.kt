@@ -1,8 +1,8 @@
 package com.example.pagoflex.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -33,16 +33,21 @@ private fun coloresPara(estado: String): ColoresEstado = when (estado) {
     else -> ColoresEstado(BordeGris, TextoGris)
 }
 
+private fun etiquetaPara(estado: String): String =
+    estado.lowercase().replaceFirstChar { it.uppercase() }
+
 @Composable
 fun EstadoBadge(estado: String, modifier: Modifier = Modifier) {
     val colores = coloresPara(estado)
-    Text(
-        text = estado,
-        color = colores.texto,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Bold,
+    AssistChip(
+        onClick = {},
+        label = { Text(etiquetaPara(estado), fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+        shape = RoundedCornerShape(12.dp),
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = colores.fondo,
+            labelColor = colores.texto
+        ),
+        border = null,
         modifier = modifier
-            .background(colores.fondo, RoundedCornerShape(12.dp))
-            .padding(horizontal = 10.dp, vertical = 4.dp)
     )
 }

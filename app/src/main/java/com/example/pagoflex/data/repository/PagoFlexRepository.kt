@@ -3,6 +3,8 @@ package com.example.pagoflex.data.repository
 import androidx.room.withTransaction
 import com.example.pagoflex.data.local.AppDatabase
 import com.example.pagoflex.data.local.CompromisoEntity
+import com.example.pagoflex.data.local.EstadoIncidencia
+import com.example.pagoflex.data.local.EstadoPago
 import com.example.pagoflex.data.local.IncidenciaEntity
 import com.example.pagoflex.data.local.PagoEntity
 import com.example.pagoflex.data.local.RolUsuario
@@ -15,6 +17,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.Calendar
 
 class PagoFlexRepository(private val db: AppDatabase) {
 
@@ -31,34 +34,26 @@ class PagoFlexRepository(private val db: AppDatabase) {
 
     val compromisos: Flow<List<CompromisoEntity>> = compromisoDao.observarTodos()
 
-    val compromisosNoPagados: Flow<List<CompromisoEntity>> = compromisoDao.observarNoPagados()
-
-    val organizacionesConPagos: Flow<List<String>> = pagoDao.observarOrganizaciones()
-
     val incidencias: Flow<List<IncidenciaEntity>> = incidenciaDao.observarTodas()
 
     val clientes: Flow<List<UsuarioEntity>> = usuarioDao.observarPorRol(RolUsuario.CLIENTE)
 
-    fun compromisosPorEstado(estado: String?): Flow<List<CompromisoEntity>> =
-        if (estado == null) compromisoDao.observarTodos() else compromisoDao.observarPorEstado(estado)
-
     fun compromisosDeUsuario(usuarioId: Int): Flow<List<CompromisoEntity>> =
         compromisoDao.observarPorUsuario(usuarioId)
-
-    fun compromisosNoPagadosDeUsuario(usuarioId: Int): Flow<List<CompromisoEntity>> =
-        compromisoDao.observarNoPagadosPorUsuario(usuarioId)
 
     fun historialDeUsuario(usuarioId: Int): Flow<List<PagoEntity>> =
         pagoDao.observarHistorialPorUsuario(usuarioId)
 
-    fun pagosFiltrados(desde: Long, organizacion: String?): Flow<List<PagoEntity>> =
-        pagoDao.observarFiltrados(desde, organizacion)
+    fun incidenciasDeUsuario(usuarioId: Int): Flow<List<IncidenciaEntity>> =
+        incidenciaDao.observarPorUsuario(usuarioId)
 
     fun observarUsuario(id: Int): Flow<UsuarioEntity?> = usuarioDao.observarPorId(id)
 
-    suspend fun iniciarSesion(correo: String, clave: String): UsuarioEntity? =
-        usuarioDao.autenticar(normalizarCorreo(correo), Hash.sha256(clave))
+    suspend fun iniciarSesion(correo: String, clave: String): UsuarioEntity? {
+        actualizarVencidos()
+        return usuarioDao.autenticar(normalizarCorreo(correo), Hash.sha256(clave))
             .also { _usuarioActual.value = it }
+    }
 
     fun cerrarSesion() {
         _usuarioActual.value = null
@@ -109,10 +104,37 @@ class PagoFlexRepository(private val db: AppDatabase) {
         return true
     }
 
-    private fun normalizarCorreo(correo: String): String = correo.trim().lowercase()
+    suspend fun obtenerCompromiso(id: Int): CompromisoEntity? = compromisoDao.obtenerPorId(id)
 
-    suspend fun registrarCompromiso(compromiso: CompromisoEntity): Long =
-        compromisoDao.insertar(compromiso)
+    suspend fun actualizarVencidos() {
+        compromisoDao.marcarVencidos(inicioDelDia(System.currentTimeMillis()))
+    }
+
+    suspend fun registrarCompromiso(
+        clienteId: Int,
+        organizacion: String,
+        concepto: String,
+        monto: Long,
+        fechaVencimiento: Long
+    ): CompromisoEntity = db.withTransaction {
+        val estado = if (fechaVencimiento < inicioDelDia(System.currentTimeMillis())) {
+            EstadoPago.VENCIDO
+        } else {
+            EstadoPago.PENDIENTE
+        }
+        val compromiso = CompromisoEntity(
+            usuarioId = clienteId,
+            folio = siguienteFolio(compromisoDao.obtenerFolios()),
+            organizacion = organizacion.trim(),
+            concepto = concepto.trim(),
+            cuotaActual = 1,
+            totalCuotas = 1,
+            monto = monto,
+            fechaVencimiento = fechaVencimiento,
+            estado = estado
+        )
+        compromiso.copy(id = compromisoDao.insertar(compromiso).toInt())
+    }
 
     suspend fun agregarTransaccion(transaccion: TransaccionEntity) {
         transaccionDao.insertarTransaccion(transaccion)
@@ -123,25 +145,45 @@ class PagoFlexRepository(private val db: AppDatabase) {
         canal: String,
         ahora: Long,
         rutaComprobanteFoto: String? = null
-    ) {
-        db.withTransaction {
-            compromisoDao.marcarComoPagado(compromiso.id)
-            pagoDao.insertar(compromiso.generarPago(ahora, canal, rutaComprobanteFoto))
+    ): PagoEntity = db.withTransaction {
+        val pago = compromiso.generarPago(ahora, canal, rutaComprobanteFoto)
+        compromisoDao.marcarComoPagado(compromiso.id)
+        pago.copy(id = pagoDao.insertar(pago).toInt())
+    }
+
+    suspend fun reportarIncidencia(motivo: String, detalle: String, ahora: Long): IncidenciaEntity? {
+        val usuario = _usuarioActual.value ?: return null
+        return db.withTransaction {
+            val siguiente = incidenciaDao.contar() + 1
+            val incidencia = IncidenciaEntity(
+                usuarioId = usuario.id,
+                folio = "PF-INC-%04d".format(siguiente),
+                motivo = motivo,
+                detalle = detalle,
+                fechaReporte = ahora,
+                comprobante = "PF-INC-$ahora"
+            )
+            incidencia.copy(id = incidenciaDao.insertar(incidencia).toInt())
         }
     }
 
-    suspend fun reportarIncidencia(motivo: String, detalle: String, ahora: Long) {
-        db.withTransaction {
-            val siguiente = incidenciaDao.contar() + 1
-            incidenciaDao.insertar(
-                IncidenciaEntity(
-                    folio = "PF-INC-%04d".format(siguiente),
-                    motivo = motivo,
-                    detalle = detalle,
-                    fechaReporte = ahora,
-                    comprobante = "PF-INC-$ahora"
-                )
-            )
-        }
+    suspend fun resolverIncidencia(id: Int) {
+        incidenciaDao.actualizarEstado(id, EstadoIncidencia.RESUELTA)
     }
+
+    private fun normalizarCorreo(correo: String): String = correo.trim().lowercase()
+
+    private fun siguienteFolio(folios: List<String>): String {
+        val mayor = folios.mapNotNull { it.removePrefix("PF-").toIntOrNull() }.maxOrNull() ?: 0
+        return "PF-%04d".format(mayor + 1)
+    }
+
+    private fun inicioDelDia(millis: Long): Long =
+        Calendar.getInstance().apply {
+            timeInMillis = millis
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
 }

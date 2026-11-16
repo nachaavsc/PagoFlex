@@ -63,6 +63,29 @@ data class PerfilUIState(
     val mensajeExito: String? = null
 )
 
+data class IncidenciaUIState(
+    val motivo: String = "",
+    val motivoError: String? = null,
+    val detalle: String = "",
+    val detalleError: String? = null,
+    val cargando: Boolean = false
+)
+
+data class NuevoCompromisoUIState(
+    val clienteId: Int? = null,
+    val clienteNombre: String = "",
+    val clienteError: String? = null,
+    val organizacion: String = "",
+    val organizacionError: String? = null,
+    val concepto: String = "",
+    val conceptoError: String? = null,
+    val monto: String = "",
+    val montoError: String? = null,
+    val fechaVencimiento: Long? = null,
+    val fechaError: String? = null,
+    val cargando: Boolean = false
+)
+
 data class CambiarClaveUIState(
     val claveActual: String = "",
     val claveActualError: String? = null,

@@ -1,9 +1,6 @@
 package com.example.pagoflex.ui.screens
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -18,7 +15,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.local.EstadoPago
-import com.example.pagoflex.ui.components.BannerConfirmacion
 import com.example.pagoflex.ui.components.EstadoBadge
 import com.example.pagoflex.ui.theme.*
 import com.example.pagoflex.ui.util.formatearFecha
@@ -30,24 +26,24 @@ private data class OpcionFiltro(val etiqueta: String, val estado: String?)
 
 private val opcionesFiltro = listOf(
     OpcionFiltro("Todos", null),
+    OpcionFiltro("Pendientes", EstadoPago.PENDIENTE),
     OpcionFiltro("Pagados", EstadoPago.PAGADO),
-    OpcionFiltro("Vencidos", EstadoPago.VENCIDO),
-    OpcionFiltro("Pendientes", EstadoPago.PENDIENTE)
+    OpcionFiltro("Vencidos", EstadoPago.VENCIDO)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompromisosScreen(
     viewModel: CompromisosViewModel,
-    titulo: String = "Mis compromisos",
-    textoVolver: String = "Volver",
-    onVolver: () -> Unit
+    onVolver: () -> Unit,
+    onPagar: (Int) -> Unit,
+    onNuevoCompromiso: () -> Unit
 ) {
     val compromisos by viewModel.compromisos.collectAsState()
     val conteo by viewModel.conteoPorEstado.collectAsState()
     val filtroEstado by viewModel.filtroEstado.collectAsState()
+    val esGestor by viewModel.esGestor.collectAsState()
     val vibrador = rememberVibrador()
-    var mensajeConfirmacion by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         containerColor = FondoClaro,
@@ -55,7 +51,7 @@ fun CompromisosScreen(
             TopAppBar(
                 title = {
                     Text(
-                        titulo,
+                        if (esGestor) "Compromisos de clientes" else "Mis compromisos",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
@@ -66,10 +62,21 @@ fun CompromisosScreen(
                 ),
                 navigationIcon = {
                     TextButton(onClick = onVolver) {
-                        Text(textoVolver, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text("Volver", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            if (esGestor) {
+                ExtendedFloatingActionButton(
+                    onClick = onNuevoCompromiso,
+                    containerColor = AzulCorporativo,
+                    contentColor = Color.White
+                ) {
+                    Text("Nuevo compromiso", fontWeight = FontWeight.SemiBold)
+                }
+            }
         }
     ) { paddingValues ->
         LazyColumn(
@@ -81,60 +88,34 @@ fun CompromisosScreen(
         ) {
             item {
                 Text(
-                    text = "Consulta tus cuotas y su estado de pago.",
+                    text = if (esGestor) "Revisa el estado de todos los compromisos asignados."
+                    else "Consulta tus cuotas y paga las pendientes o vencidas.",
                     color = TextoGris,
                     fontSize = 14.sp
                 )
             }
 
             item {
-                Column {
-                    Text(
-                        text = "Filtrar compromisos",
-                        color = TextoOscuro,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(opcionesFiltro) { opcion ->
-                            val estaSeleccionado = filtroEstado == opcion.estado
-                            val cantidad = opcion.estado?.let { conteo[it] ?: 0 } ?: conteo.values.sum()
-                            Box(
-                                modifier = Modifier
-                                    .background(
-                                        color = if (estaSeleccionado) AzulCorporativo else TarjetaBlanca,
-                                        shape = RoundedCornerShape(20.dp)
-                                    )
-                                    .border(
-                                        width = 1.dp,
-                                        color = if (estaSeleccionado) AzulCorporativo else BordeGris,
-                                        shape = RoundedCornerShape(20.dp)
-                                    )
-                                    .clickable {
-                                        vibrador.toque()
-                                        viewModel.onFiltroChange(opcion.estado)
-                                    }
-                                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                            ) {
-                                Text(
-                                    text = "${opcion.etiqueta} ($cantidad)",
-                                    color = if (estaSeleccionado) Color.White else TextoOscuro,
-                                    fontSize = 14.sp,
-                                    fontWeight = if (estaSeleccionado) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                        }
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(opcionesFiltro) { opcion ->
+                        val cantidad = opcion.estado?.let { conteo[it] ?: 0 } ?: conteo.values.sum()
+                        FilterChip(
+                            selected = filtroEstado == opcion.estado,
+                            onClick = {
+                                vibrador.toque()
+                                viewModel.onFiltroChange(opcion.estado)
+                            },
+                            label = { Text("${opcion.etiqueta} ($cantidad)") },
+                            shape = RoundedCornerShape(20.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                containerColor = TarjetaBlanca,
+                                labelColor = TextoOscuro,
+                                selectedContainerColor = AzulCorporativo,
+                                selectedLabelColor = Color.White
+                            )
+                        )
                     }
                 }
-            }
-
-            item {
-                BannerConfirmacion(
-                    mensaje = mensajeConfirmacion,
-                    onOcultar = { mensajeConfirmacion = null }
-                )
             }
 
             if (compromisos.isEmpty()) {
@@ -148,8 +129,9 @@ fun CompromisosScreen(
                 }
             }
 
-            items(compromisos, key = { it.id }) { compromiso ->
-                val pagado = compromiso.estado == EstadoPago.PAGADO
+            items(compromisos, key = { it.compromiso.id }) { item ->
+                val compromiso = item.compromiso
+                val pagable = compromiso.estado != EstadoPago.PAGADO
                 ElevatedCard(
                     modifier = Modifier
                         .animateItem()
@@ -170,42 +152,35 @@ fun CompromisosScreen(
                             Text(compromiso.organizacion, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro)
                             EstadoBadge(compromiso.estado)
                         }
+                        item.nombreCliente?.let {
+                            Text("Cliente: $it", color = AzulCorporativo, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                        }
                         Text(compromiso.concepto, color = TextoGris, fontSize = 13.sp)
                         Text("Cuota: ${compromiso.cuotaActual} de ${compromiso.totalCuotas}", color = TextoOscuro, fontSize = 14.sp)
                         Text("Monto: ${formatearMonto(compromiso.monto)}", fontWeight = FontWeight.Bold, color = AzulCorporativo)
                         Text("Vencimiento: ${formatearFecha(compromiso.fechaVencimiento)}", color = TextoGris, fontSize = 13.sp)
                         Text("Folio: ${compromiso.folio}", color = TextoGris, fontSize = 13.sp)
 
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = {
-                                vibrador.confirmacion()
-                                viewModel.registrarPago(compromiso)
-                                mensajeConfirmacion = "Pago de la cuota ${compromiso.cuotaActual} de " +
-                                    "${compromiso.totalCuotas} (${compromiso.folio}) registrado."
-                            },
-                            enabled = !pagado,
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = AzulCorporativo)
-                        ) {
-                            AnimatedContent(targetState = pagado, label = "estadoBoton") { estaPagado ->
-                                Text(if (estaPagado) "Pagado" else "Registrar pago", color = Color.White)
+                        if (!esGestor && pagable) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = {
+                                    vibrador.toque()
+                                    onPagar(compromiso.id)
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (compromiso.estado == EstadoPago.VENCIDO) Coral else AzulCorporativo
+                                )
+                            ) {
+                                Text("Pagar cuota", color = Color.White)
                             }
                         }
                     }
                 }
             }
 
-            item {
-                Button(
-                    onClick = onVolver,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = AzulCorporativo),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Volver", color = Color.White, fontWeight = FontWeight.Bold)
-                }
-            }
+            item { Spacer(modifier = Modifier.height(72.dp)) }
         }
     }
 }

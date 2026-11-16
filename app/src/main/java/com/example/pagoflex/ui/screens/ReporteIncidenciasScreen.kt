@@ -14,12 +14,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.pagoflex.ui.components.BannerConfirmacion
+import com.example.pagoflex.data.local.EstadoIncidencia
+import com.example.pagoflex.ui.components.BotonPrimario
+import com.example.pagoflex.ui.components.CampoSeleccion
+import com.example.pagoflex.ui.components.CampoTexto
+import com.example.pagoflex.ui.components.EfectoEventos
 import com.example.pagoflex.ui.components.EstadoBadge
+import com.example.pagoflex.ui.components.SnackbarPagoFlex
 import com.example.pagoflex.ui.theme.*
 import com.example.pagoflex.ui.util.formatearFechaHora
 import com.example.pagoflex.ui.util.rememberVibrador
+import com.example.pagoflex.viewmodel.EventoUI
+import com.example.pagoflex.viewmodel.IncidenciaConCliente
 import com.example.pagoflex.viewmodel.IncidenciasViewModel
+
+private val motivos = listOf("Error en el cobro", "Pago no reflejado", "Cobro duplicado", "Otro")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,21 +37,23 @@ fun ReporteIncidenciasScreen(
     onVolver: () -> Unit
 ) {
     val incidencias by viewModel.incidencias.collectAsState()
+    val esGestor by viewModel.esGestor.collectAsState()
+    val state by viewModel.uiState.collectAsState()
     val vibrador = rememberVibrador()
-    var mensajeConfirmacion by remember { mutableStateOf<String?>(null) }
-    var motivo by remember { mutableStateOf("Error en el cobro") }
-    var detalles by remember { mutableStateOf("") }
-    var expandido by remember { mutableStateOf(false) }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-    val motivos = listOf("Error en el cobro", "Pago no reflejado", "Cobro duplicado", "Otro")
+    EfectoEventos(viewModel.eventos, snackbarHostState) { evento ->
+        if (evento is EventoUI.Exito) vibrador.confirmacion()
+    }
 
     Scaffold(
         containerColor = FondoClaro,
+        snackbarHost = { SnackbarPagoFlex(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        "Reporte de Incidencias",
+                        if (esGestor) "Gestión de incidencias" else "Reporte de Incidencias",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
@@ -68,114 +79,14 @@ fun ReporteIncidenciasScreen(
                 .animateContentSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(
-                text = "Generar constancia de error / reclamo",
-                fontWeight = FontWeight.Bold,
-                color = TextoOscuro,
-                fontSize = 16.sp
-            )
-
-            ElevatedCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.elevatedCardColors(containerColor = TarjetaBlanca)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    ExposedDropdownMenuBox(
-                        expanded = expandido,
-                        onExpandedChange = { expandido = !expandido }
-                    ) {
-                        OutlinedTextField(
-                            value = motivo,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Motivo de la incidencia") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandido) },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth(),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = AzulCorporativo,
-                                unfocusedBorderColor = BordeGris
-                            ),
-                            shape = RoundedCornerShape(12.dp)
-                        )
-                        ExposedDropdownMenu(
-                            expanded = expandido,
-                            onDismissRequest = { expandido = false }
-                        ) {
-                            motivos.forEach { m ->
-                                DropdownMenuItem(
-                                    text = { Text(m) },
-                                    onClick = {
-                                        motivo = m
-                                        expandido = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    OutlinedTextField(
-                        value = detalles,
-                        onValueChange = { detalles = it },
-                        label = { Text("Detalle opcional o comentarios") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AzulCorporativo,
-                            unfocusedBorderColor = BordeGris
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                }
-            }
-
-            Button(
-                onClick = {
-                    vibrador.confirmacion()
-                    viewModel.reportarIncidencia(motivo, detalles)
-                    detalles = ""
-                    mensajeConfirmacion = "Reporte enviado. Te avisaremos cuando sea revisado."
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AzulCorporativo),
-                shape = RoundedCornerShape(12.dp)
-            ) {
+            if (!esGestor) {
                 Text(
-                    text = "Enviar reporte de incidencia",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
+                    text = "Generar constancia de error / reclamo",
+                    fontWeight = FontWeight.Bold,
+                    color = TextoOscuro,
+                    fontSize = 16.sp
                 )
-            }
 
-            BannerConfirmacion(
-                mensaje = mensajeConfirmacion,
-                onOcultar = { mensajeConfirmacion = null }
-            )
-
-            Text(
-                text = "Mis reportes",
-                fontWeight = FontWeight.Bold,
-                color = TextoOscuro,
-                fontSize = 16.sp
-            )
-
-            if (incidencias.isEmpty()) {
-                Text("Aún no has reportado incidencias.", color = TextoGris, fontSize = 14.sp)
-            }
-
-            incidencias.forEach { incidencia ->
                 ElevatedCard(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -184,24 +95,110 @@ fun ReporteIncidenciasScreen(
                     colors = CardDefaults.elevatedCardColors(containerColor = TarjetaBlanca)
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(incidencia.motivo, fontWeight = FontWeight.Bold, color = TextoOscuro)
-                            EstadoBadge(incidencia.estado)
-                        }
-                        if (incidencia.detalle.isNotBlank()) {
-                            Text(incidencia.detalle, color = TextoGris, fontSize = 13.sp)
-                        }
-                        Text("Folio: ${incidencia.folio}", color = TextoGris, fontSize = 12.sp)
-                        Text("Fecha: ${formatearFechaHora(incidencia.fechaReporte)}", color = TextoGris, fontSize = 12.sp)
-                        Text("Constancia: ${incidencia.comprobante}", color = TextoGris, fontSize = 11.sp)
+                        CampoSeleccion(
+                            valor = state.motivo,
+                            etiqueta = "Motivo de la incidencia",
+                            opciones = motivos,
+                            textoOpcion = { it },
+                            onSeleccion = viewModel::onMotivoChange,
+                            error = state.motivoError,
+                            habilitado = !state.cargando
+                        )
+
+                        CampoTexto(
+                            valor = state.detalle,
+                            onValorChange = viewModel::onDetalleChange,
+                            etiqueta = "Descripción del problema",
+                            error = state.detalleError,
+                            habilitado = !state.cargando,
+                            lineasMinimas = 4
+                        )
+
+                        BotonPrimario(
+                            texto = if (state.cargando) "Enviando..." else "Enviar reporte de incidencia",
+                            onClick = viewModel::reportarIncidencia,
+                            habilitado = !state.cargando
+                        )
                     }
+                }
+            }
+
+            Text(
+                text = if (esGestor) "Incidencias reportadas por clientes" else "Mis reportes",
+                fontWeight = FontWeight.Bold,
+                color = TextoOscuro,
+                fontSize = 16.sp
+            )
+
+            if (incidencias.isEmpty()) {
+                Text(
+                    if (esGestor) "No hay incidencias reportadas." else "Aún no has reportado incidencias.",
+                    color = TextoGris,
+                    fontSize = 14.sp
+                )
+            }
+
+            incidencias.forEach { item ->
+                TarjetaIncidencia(
+                    item = item,
+                    esGestor = esGestor,
+                    onResolver = { viewModel.resolverIncidencia(item.incidencia) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TarjetaIncidencia(
+    item: IncidenciaConCliente,
+    esGestor: Boolean,
+    onResolver: () -> Unit
+) {
+    val incidencia = item.incidencia
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = TarjetaBlanca)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(incidencia.motivo, fontWeight = FontWeight.Bold, color = TextoOscuro)
+                EstadoBadge(incidencia.estado)
+            }
+            item.nombreCliente?.let {
+                Text("Cliente: $it", color = AzulCorporativo, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+            }
+            if (incidencia.detalle.isNotBlank()) {
+                Text(incidencia.detalle, color = TextoGris, fontSize = 13.sp)
+            }
+            Text("Folio: ${incidencia.folio}", color = TextoGris, fontSize = 12.sp)
+            Text("Fecha: ${formatearFechaHora(incidencia.fechaReporte)}", color = TextoGris, fontSize = 12.sp)
+            Text("Constancia: ${incidencia.comprobante}", color = TextoGris, fontSize = 11.sp)
+
+            if (esGestor && incidencia.estado == EstadoIncidencia.EN_REVISION) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = onResolver,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = VerdeEsmeralda),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("Marcar como resuelta", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             }
         }
