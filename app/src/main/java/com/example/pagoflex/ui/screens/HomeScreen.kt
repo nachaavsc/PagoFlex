@@ -16,18 +16,10 @@ import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.local.CompromisoEntity
 import com.example.pagoflex.data.local.EstadoPago
 import com.example.pagoflex.ui.components.EstadoBadge
+import com.example.pagoflex.ui.theme.*
 import com.example.pagoflex.ui.util.formatearFecha
 import com.example.pagoflex.ui.util.formatearMonto
 import com.example.pagoflex.viewmodel.HomeViewModel
-
-private val FondoClaro = Color(0xFFF8FAFC)
-private val AzulCorporativo = Color(0xFF0284C7)
-private val TarjetaBlanca = Color(0xFFFFFFFF)
-private val BordeGris = Color(0xFFE2E8F0)
-private val FondoAlertaRojo = Color(0xFFFEF2F2)
-private val TextoRojo = Color(0xFF991B1B)
-private val TextoOscuro = Color(0xFF0F172A)
-private val TextoGris = Color(0xFF64748B)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,10 +73,10 @@ fun HomeScreen(
         ) {
 
             item {
-                Card(
+                ElevatedCard(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = AzulCorporativo)
+                    colors = CardDefaults.elevatedCardColors(containerColor = AzulCorporativo)
                 ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(
@@ -107,10 +99,10 @@ fun HomeScreen(
 
             if (uiState.cantidadVencidos > 0) {
                 item {
-                    Card(
+                    ElevatedCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = FondoAlertaRojo)
+                        colors = CardDefaults.elevatedCardColors(containerColor = CoralSuave)
                     ) {
                         Row(
                             modifier = Modifier.padding(14.dp),
@@ -120,7 +112,7 @@ fun HomeScreen(
                             Text(
                                 if (vencidos == 1) "Tienes 1 compromiso de pago vencido."
                                 else "Tienes $vencidos compromisos de pago vencidos.",
-                                color = TextoRojo,
+                                color = CoralOscuro,
                                 fontWeight = FontWeight.SemiBold,
                                 fontSize = 14.sp
                             )
@@ -175,10 +167,10 @@ fun HomeScreen(
 
             items(uiState.cuentasPorPagar, key = { it.id }) { cuenta ->
                 val vencida = cuenta.estado == EstadoPago.VENCIDO
-                Card(
+                ElevatedCard(
                     modifier = Modifier.fillMaxWidth().border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = TarjetaBlanca)
+                    colors = CardDefaults.elevatedCardColors(containerColor = TarjetaBlanca)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(
@@ -194,7 +186,7 @@ fun HomeScreen(
                             formatearMonto(cuenta.monto),
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp,
-                            color = if (vencida) TextoRojo else AzulCorporativo
+                            color = if (vencida) CoralOscuro else AzulCorporativo
                         )
                         Text(
                             "Cuota ${cuenta.cuotaActual}/${cuenta.totalCuotas} • Vence: ${formatearFecha(cuenta.fechaVencimiento)}",

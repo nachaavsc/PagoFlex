@@ -4,7 +4,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -13,16 +12,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.ui.components.BotonPrimario
+import com.example.pagoflex.ui.components.CampoTexto
+import com.example.pagoflex.ui.theme.*
 import com.example.pagoflex.viewmodel.FormularioViewModel
-
-private val FondoAzulSuave = Color(0xFFF0F7FF)
-private val AzulCorporativo = Color(0xFF0284C7)
-private val TarjetaBlanca = Color(0xFFFFFFFF)
-private val BordeAzul = Color(0xFFBAE6FD)
-private val TextoGris = Color(0xFF334155)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,7 +26,6 @@ fun FormularioScreen(
     onNavegarHome: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
-    var password by remember { mutableStateOf("") }
     val scrollState = rememberScrollState()
 
     LaunchedEffect(state.guardadoExitoso) {
@@ -42,7 +36,7 @@ fun FormularioScreen(
     }
 
     Scaffold(
-        containerColor = FondoAzulSuave,
+        containerColor = FondoClaro,
         topBar = {
             TopAppBar(
                 title = {
@@ -84,113 +78,59 @@ fun FormularioScreen(
                     .padding(bottom = 16.dp)
             )
 
-            Card(
+            ElevatedCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(1.dp, BordeAzul, RoundedCornerShape(16.dp)),
+                    .border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = TarjetaBlanca),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                colors = CardDefaults.elevatedCardColors(containerColor = TarjetaBlanca),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 4.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    OutlinedTextField(
-                        value = state.nombre,
-                        onValueChange = { viewModel.onNombreChange(it) },
-                        label = { Text("Nombre del Destinatario") },
-                        isError = state.nombreError != null,
-                        supportingText = {
-                            state.nombreError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                        },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AzulCorporativo,
-                            focusedLabelColor = AzulCorporativo,
-                            unfocusedBorderColor = BordeAzul
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    CampoTexto(
+                        valor = state.nombre,
+                        onValorChange = viewModel::onNombreChange,
+                        etiqueta = "Nombre del Destinatario",
+                        error = state.nombreError
                     )
 
-                    OutlinedTextField(
-                        value = state.correo,
-                        onValueChange = { viewModel.onCorreoChange(it) },
-                        label = { Text("Correo Electrónico") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        isError = state.correoError != null,
-                        supportingText = {
-                            state.correoError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                        },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AzulCorporativo,
-                            focusedLabelColor = AzulCorporativo,
-                            unfocusedBorderColor = BordeAzul
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    CampoTexto(
+                        valor = state.correo,
+                        onValorChange = viewModel::onCorreoChange,
+                        etiqueta = "Correo Electrónico",
+                        error = state.correoError,
+                        tipoTeclado = KeyboardType.Email
                     )
 
-                    OutlinedTextField(
-                        value = state.monto,
-                        onValueChange = { viewModel.onMontoChange(it) },
-                        label = { Text("Monto ($)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        isError = state.montoError != null,
-                        supportingText = {
-                            state.montoError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                        },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AzulCorporativo,
-                            focusedLabelColor = AzulCorporativo,
-                            unfocusedBorderColor = BordeAzul
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    CampoTexto(
+                        valor = state.monto,
+                        onValorChange = viewModel::onMontoChange,
+                        etiqueta = "Monto ($)",
+                        error = state.montoError,
+                        tipoTeclado = KeyboardType.Number
                     )
 
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Contraseña de confirmación") },
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AzulCorporativo,
-                            focusedLabelColor = AzulCorporativo,
-                            unfocusedBorderColor = BordeAzul
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.fillMaxWidth()
+                    CampoTexto(
+                        valor = state.clave,
+                        onValorChange = viewModel::onClaveChange,
+                        etiqueta = "Clave de confirmación",
+                        error = state.claveError,
+                        esClave = true
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = {
-                    viewModel.guardarTransaccion()
-                },
-                enabled = state.nombre.isNotEmpty() && state.correo.isNotEmpty() && state.monto.isNotEmpty(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = AzulCorporativo,
-                    disabledContainerColor = Color.LightGray
-                ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    text = "Procesar Pago Flex",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            BotonPrimario(
+                texto = "Procesar Pago Flex",
+                onClick = viewModel::guardarTransaccion
+            )
 
             Spacer(modifier = Modifier.height(32.dp))
         }

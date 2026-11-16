@@ -1,5 +1,4 @@
 package com.example.pagoflex.ui.components
-
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -17,10 +16,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.pagoflex.ui.theme.VerdeOscuro
+import com.example.pagoflex.ui.theme.VerdeSuave
 import kotlinx.coroutines.delay
 
 @Composable
@@ -47,12 +47,12 @@ fun BannerConfirmacion(
     ) {
         Text(
             text = ultimoMensaje,
-            color = Color(0xFF166534),
+            color = VerdeOscuro,
             fontWeight = FontWeight.SemiBold,
             fontSize = 14.sp,
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFDCFCE7), RoundedCornerShape(12.dp))
+                .background(VerdeSuave, RoundedCornerShape(12.dp))
                 .padding(14.dp)
         )
     }

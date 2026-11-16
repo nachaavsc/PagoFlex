@@ -1,5 +1,6 @@
 package com.example.pagoflex.data.local
 
+import com.example.pagoflex.data.seguridad.Hash
 import java.util.Calendar
 
 object DatosIniciales {
@@ -10,17 +11,17 @@ object DatosIniciales {
         UsuarioEntity(
             nombre = "Camila Rojas",
             correo = "cliente@pagoflex.cl",
-            clave = "Cliente#2026",
+            clave = Hash.sha256("Cliente#2026"),
             rol = RolUsuario.CLIENTE,
-            telefono = "+56 9 1234 5678",
+            telefono = "+56912345678",
             direccion = "Av. Providencia 1234, Santiago"
         ),
         UsuarioEntity(
             nombre = "Matías Fuentes",
             correo = "gestor@pagoflex.cl",
-            clave = "Gestor#2026",
+            clave = Hash.sha256("Gestor#2026"),
             rol = RolUsuario.GESTOR,
-            telefono = "+56 9 8765 4321",
+            telefono = "+56987654321",
             direccion = "Huérfanos 950, Santiago"
         )
     )

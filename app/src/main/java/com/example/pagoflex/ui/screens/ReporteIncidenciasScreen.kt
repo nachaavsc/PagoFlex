@@ -16,16 +16,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.ui.components.BannerConfirmacion
 import com.example.pagoflex.ui.components.EstadoBadge
+import com.example.pagoflex.ui.theme.*
 import com.example.pagoflex.ui.util.formatearFechaHora
 import com.example.pagoflex.ui.util.rememberVibrador
 import com.example.pagoflex.viewmodel.IncidenciasViewModel
-
-private val FondoClaro = Color(0xFFF8FAFC)
-private val AzulCorporativo = Color(0xFF0284C7)
-private val TarjetaBlanca = Color(0xFFFFFFFF)
-private val BordeGris = Color(0xFFE2E8F0)
-private val TextoOscuro = Color(0xFF0F172A)
-private val TextoGris = Color(0xFF64748B)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,12 +75,12 @@ fun ReporteIncidenciasScreen(
                 fontSize = 16.sp
             )
 
-            Card(
+            ElevatedCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = TarjetaBlanca)
+                colors = CardDefaults.elevatedCardColors(containerColor = TarjetaBlanca)
             ) {
                 Column(
                     modifier = Modifier
@@ -182,12 +176,12 @@ fun ReporteIncidenciasScreen(
             }
 
             incidencias.forEach { incidencia ->
-                Card(
+                ElevatedCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = TarjetaBlanca)
+                    colors = CardDefaults.elevatedCardColors(containerColor = TarjetaBlanca)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),

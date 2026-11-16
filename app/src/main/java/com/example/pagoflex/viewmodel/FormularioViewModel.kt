@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.pagoflex.data.local.TransaccionEntity
 import com.example.pagoflex.data.repository.PagoFlexRepository
 import com.example.pagoflex.model.FormularioUIState
+import com.example.pagoflex.model.Validador
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,38 +18,50 @@ class FormularioViewModel(private val repository: PagoFlexRepository) : ViewMode
     val uiState: StateFlow<FormularioUIState> = _uiState.asStateFlow()
 
     fun onNombreChange(nuevoNombre: String) {
-        _uiState.update { it.copy(nombre = nuevoNombre, nombreError = null) }
-        validarFormulario()
-    }
-
-    fun onCorreoChange(nuevoCorreo: String) {
-        _uiState.update { it.copy(correo = nuevoCorreo, correoError = null) }
-        validarFormulario()
-    }
-
-    fun onMontoChange(nuevoMonto: String) {
-        _uiState.update { it.copy(monto = nuevoMonto, montoError = null) }
-        validarFormulario()
-    }
-
-    private fun validarFormulario() {
-        val state = _uiState.value
-        val esNombreValido = state.nombre.isNotBlank()
-        val esCorreoValido = state.correo.contains("@") && state.correo.contains(".")
-        val esMontoValido = state.monto.toDoubleOrNull()?.let { it > 0 } ?: false
-
         _uiState.update {
-            it.copy(esValido = esNombreValido && esCorreoValido && esMontoValido)
+            it.copy(nombre = nuevoNombre, nombreError = Validador.revalidar(it.nombreError) { Validador.nombre(nuevoNombre) })
         }
     }
 
+    fun onCorreoChange(nuevoCorreo: String) {
+        _uiState.update {
+            it.copy(correo = nuevoCorreo, correoError = Validador.revalidar(it.correoError) { Validador.correo(nuevoCorreo) })
+        }
+    }
+
+    fun onMontoChange(nuevoMonto: String) {
+        _uiState.update {
+            it.copy(monto = nuevoMonto, montoError = Validador.revalidar(it.montoError) { Validador.monto(nuevoMonto) })
+        }
+    }
+
+    fun onClaveChange(nuevaClave: String) {
+        _uiState.update {
+            it.copy(clave = nuevaClave, claveError = Validador.revalidar(it.claveError) { validarClave(nuevaClave) })
+        }
+    }
+
+    private fun validarClave(clave: String): String? =
+        Validador.obligatorio(clave, "Ingresa tu clave para confirmar el pago")
+            ?: if (repository.verificarClave(clave)) null else "La clave no coincide con tu cuenta"
+
     fun guardarTransaccion() {
         val state = _uiState.value
+        val validado = state.copy(
+            nombreError = Validador.nombre(state.nombre),
+            correoError = Validador.correo(state.correo),
+            montoError = Validador.monto(state.monto),
+            claveError = validarClave(state.clave)
+        )
+        _uiState.value = validado
+        val hayErrores = listOf(validado.nombreError, validado.correoError, validado.montoError, validado.claveError)
+            .any { it != null }
+        if (hayErrores) return
 
         viewModelScope.launch {
             val nuevaTransaccion = TransaccionEntity(
-                concepto = "Pago a ${state.nombre}",
-                monto = state.monto.toDoubleOrNull() ?: 0.0,
+                concepto = "Pago a ${state.nombre.trim()}",
+                monto = state.monto.trim().toDouble(),
                 fecha = System.currentTimeMillis(),
                 estado = "Completado"
             )

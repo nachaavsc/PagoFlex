@@ -10,6 +10,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,19 +24,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-private val FondoClaro = Color(0xFFF8FAFC)
-private val AzulCorporativo = Color(0xFF0284C7)
-private val TarjetaBlanca = Color(0xFFFFFFFF)
-private val BordeGris = Color(0xFFE2E8F0)
-private val TextoOscuro = Color(0xFF0F172A)
-private val TextoGris = Color(0xFF64748B)
+import com.example.pagoflex.data.local.RolUsuario
+import com.example.pagoflex.ui.theme.*
+import com.example.pagoflex.viewmodel.PerfilViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PerfilScreen(
-    onVolver: () -> Unit
+    viewModel: PerfilViewModel,
+    onVolver: () -> Unit,
+    onEditarPerfil: () -> Unit,
+    onCambiarClave: () -> Unit,
+    onCerrarSesion: () -> Unit
 ) {
+    val usuario by viewModel.usuario.collectAsState()
     val context = LocalContext.current
     var fotoBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
@@ -73,6 +76,7 @@ fun PerfilScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -83,7 +87,7 @@ fun PerfilScreen(
                 modifier = Modifier
                     .size(130.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFE0F2FE))
+                    .background(AzulSuave)
                     .border(2.dp, AzulCorporativo, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
@@ -107,10 +111,26 @@ fun PerfilScreen(
             }
 
             Text(
-                text = "Usuario PagoFlex",
+                text = usuario?.nombre ?: "Usuario PagoFlex",
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = TextoOscuro
+            )
+
+            Text(
+                text = usuario?.correo.orEmpty(),
+                fontSize = 14.sp,
+                color = TextoGris
+            )
+
+            Text(
+                text = if (usuario?.rol == RolUsuario.GESTOR) "Gestor de cobranza" else "Cliente",
+                color = AzulCorporativo,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 13.sp,
+                modifier = Modifier
+                    .background(AzulSuave, RoundedCornerShape(12.dp))
+                    .padding(horizontal = 12.dp, vertical = 4.dp)
             )
 
             Button(
@@ -127,12 +147,12 @@ fun PerfilScreen(
                 Text("Tomar Foto con Cámara", color = Color.White, fontWeight = FontWeight.Bold)
             }
 
-            Card(
+            ElevatedCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = TarjetaBlanca)
+                colors = CardDefaults.elevatedCardColors(containerColor = TarjetaBlanca)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -170,25 +190,43 @@ fun PerfilScreen(
                             .height(8.dp)
                             .clip(RoundedCornerShape(4.dp)),
                         color = AzulCorporativo,
-                        trackColor = Color(0xFFE2E8F0)
+                        trackColor = BordeGris
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
-
             OutlinedButton(
-                onClick = onVolver,
+                onClick = onEditarPerfil,
                 modifier = Modifier
                     .fillMaxWidth()
-                                        .height(48.dp),
+                    .height(48.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text(
-                    text = "Volver al Inicio",
-                    color = AzulCorporativo,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(text = "Editar perfil", color = AzulCorporativo, fontWeight = FontWeight.Bold)
+            }
+
+            OutlinedButton(
+                onClick = onCambiarClave,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(text = "Cambiar clave", color = AzulCorporativo, fontWeight = FontWeight.Bold)
+            }
+
+            Button(
+                onClick = {
+                    viewModel.cerrarSesion()
+                    onCerrarSesion()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Coral),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(text = "Cerrar sesión", color = Color.White, fontWeight = FontWeight.Bold)
             }
         }
     }

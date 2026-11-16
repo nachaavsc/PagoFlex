@@ -12,15 +12,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.local.EstadoIncidencia
 import com.example.pagoflex.data.local.EstadoPago
+import com.example.pagoflex.ui.theme.AmbarOscuro
+import com.example.pagoflex.ui.theme.AmbarSuave
+import com.example.pagoflex.ui.theme.AzulCorporativo
+import com.example.pagoflex.ui.theme.AzulSuave
+import com.example.pagoflex.ui.theme.BordeGris
+import com.example.pagoflex.ui.theme.CoralOscuro
+import com.example.pagoflex.ui.theme.CoralSuave
+import com.example.pagoflex.ui.theme.TextoGris
+import com.example.pagoflex.ui.theme.VerdeOscuro
+import com.example.pagoflex.ui.theme.VerdeSuave
 
 private data class ColoresEstado(val fondo: Color, val texto: Color)
 
 private fun coloresPara(estado: String): ColoresEstado = when (estado) {
-    EstadoPago.PAGADO, EstadoIncidencia.RESUELTA -> ColoresEstado(Color(0xFFDCFCE7), Color(0xFF166534))
-    EstadoPago.VENCIDO -> ColoresEstado(Color(0xFFFEE2E2), Color(0xFF991B1B))
-    EstadoPago.PENDIENTE -> ColoresEstado(Color(0xFFFEF3C7), Color(0xFF92400E))
-    EstadoIncidencia.EN_REVISION -> ColoresEstado(Color(0xFFE0F2FE), Color(0xFF075985))
-    else -> ColoresEstado(Color(0xFFF1F5F9), Color(0xFF334155))
+    EstadoPago.PAGADO, EstadoIncidencia.RESUELTA -> ColoresEstado(VerdeSuave, VerdeOscuro)
+    EstadoPago.VENCIDO -> ColoresEstado(CoralSuave, CoralOscuro)
+    EstadoPago.PENDIENTE -> ColoresEstado(AmbarSuave, AmbarOscuro)
+    EstadoIncidencia.EN_REVISION -> ColoresEstado(AzulSuave, AzulCorporativo)
+    else -> ColoresEstado(BordeGris, TextoGris)
 }
 
 @Composable

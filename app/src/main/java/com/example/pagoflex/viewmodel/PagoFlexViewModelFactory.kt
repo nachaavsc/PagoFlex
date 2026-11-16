@@ -16,6 +16,10 @@ class PagoFlexViewModelFactory(
         modelClass.isAssignableFrom(HistorialViewModel::class.java) -> HistorialViewModel(repository)
         modelClass.isAssignableFrom(IncidenciasViewModel::class.java) -> IncidenciasViewModel(repository)
         modelClass.isAssignableFrom(PerfilViewModel::class.java) -> PerfilViewModel(repository)
+        modelClass.isAssignableFrom(LoginViewModel::class.java) -> LoginViewModel(repository)
+        modelClass.isAssignableFrom(RegistroViewModel::class.java) -> RegistroViewModel(repository)
+        modelClass.isAssignableFrom(RecuperarClaveViewModel::class.java) -> RecuperarClaveViewModel(repository)
+        modelClass.isAssignableFrom(CambiarClaveViewModel::class.java) -> CambiarClaveViewModel(repository)
         else -> throw IllegalArgumentException("ViewModel no soportado: ${modelClass.name}")
     } as T
 }

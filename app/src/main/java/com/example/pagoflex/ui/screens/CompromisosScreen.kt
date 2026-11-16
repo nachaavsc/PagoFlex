@@ -20,17 +20,11 @@ import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.local.EstadoPago
 import com.example.pagoflex.ui.components.BannerConfirmacion
 import com.example.pagoflex.ui.components.EstadoBadge
+import com.example.pagoflex.ui.theme.*
 import com.example.pagoflex.ui.util.formatearFecha
 import com.example.pagoflex.ui.util.formatearMonto
 import com.example.pagoflex.ui.util.rememberVibrador
 import com.example.pagoflex.viewmodel.CompromisosViewModel
-
-private val FondoClaro = Color(0xFFF8FAFC)
-private val AzulCorporativo = Color(0xFF0284C7)
-private val TarjetaBlanca = Color(0xFFFFFFFF)
-private val BordeGris = Color(0xFFE2E8F0)
-private val TextoOscuro = Color(0xFF0F172A)
-private val TextoGris = Color(0xFF64748B)
 
 private data class OpcionFiltro(val etiqueta: String, val estado: String?)
 
@@ -45,6 +39,8 @@ private val opcionesFiltro = listOf(
 @Composable
 fun CompromisosScreen(
     viewModel: CompromisosViewModel,
+    titulo: String = "Mis compromisos",
+    textoVolver: String = "Volver",
     onVolver: () -> Unit
 ) {
     val compromisos by viewModel.compromisos.collectAsState()
@@ -59,7 +55,7 @@ fun CompromisosScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "Mis compromisos",
+                        titulo,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 20.sp
@@ -70,7 +66,7 @@ fun CompromisosScreen(
                 ),
                 navigationIcon = {
                     TextButton(onClick = onVolver) {
-                        Text("Volver", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text(textoVolver, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             )
@@ -154,13 +150,13 @@ fun CompromisosScreen(
 
             items(compromisos, key = { it.id }) { compromiso ->
                 val pagado = compromiso.estado == EstadoPago.PAGADO
-                Card(
+                ElevatedCard(
                     modifier = Modifier
                         .animateItem()
                         .fillMaxWidth()
                         .border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
                     shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = TarjetaBlanca)
+                    colors = CardDefaults.elevatedCardColors(containerColor = TarjetaBlanca)
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
