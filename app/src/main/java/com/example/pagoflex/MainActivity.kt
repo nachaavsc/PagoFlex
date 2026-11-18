@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModelProvider
 import com.example.pagoflex.navegation.AppNavigation
 import com.example.pagoflex.ui.theme.PagoFlexTheme
-import com.example.pagoflex.viewmodel.FormularioViewModel
 import com.example.pagoflex.viewmodel.HomeViewModel
 
 class MainActivity : ComponentActivity() {
@@ -33,7 +32,6 @@ class MainActivity : ComponentActivity() {
 
         val factory = app.viewModelFactory
         val homeViewModel = ViewModelProvider(this, factory)[HomeViewModel::class.java]
-        val formularioViewModel = ViewModelProvider(this, factory)[FormularioViewModel::class.java]
 
         setContent {
             PagoFlexTheme {
@@ -43,8 +41,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     AppNavigation(
                         factory = factory,
-                        homeViewModel = homeViewModel,
-                        formularioViewModel = formularioViewModel
+                        homeViewModel = homeViewModel
                     )
                 }
             }

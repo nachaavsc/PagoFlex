@@ -1,5 +1,8 @@
 package com.example.pagoflex.ui.screens
 
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.Icons
+import com.example.pagoflex.ui.components.EstadoVacio
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -120,10 +123,10 @@ fun CompromisosScreen(
 
             if (compromisos.isEmpty()) {
                 item(key = "vacio") {
-                    Text(
-                        "No hay compromisos para este filtro.",
-                        color = TextoGris,
-                        fontSize = 14.sp,
+                    EstadoVacio(
+                        titulo = "Sin compromisos",
+                        mensaje = "No hay compromisos registrados para este filtro.",
+                        icono = Icons.Filled.DateRange,
                         modifier = Modifier.animateItem()
                     )
                 }

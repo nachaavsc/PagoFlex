@@ -12,10 +12,8 @@ import com.example.pagoflex.data.local.UsuarioEntity
 import com.example.pagoflex.data.repository.PagoFlexRepository
 import com.example.pagoflex.model.Cumplimiento
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -42,6 +40,8 @@ data class HomeUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModel(private val repository: PagoFlexRepository) : ViewModel() {
 
+    val usuarioActual: StateFlow<UsuarioEntity?> = repository.usuarioActual
+
     val uiState: StateFlow<HomeUiState> = repository.usuarioActual
         .flatMapLatest { usuario ->
             when {
@@ -66,13 +66,6 @@ class HomeViewModel(private val repository: PagoFlexRepository) : ViewModel() {
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = HomeUiState()
         )
-
-    private val _recordatoriosActivos = MutableStateFlow(false)
-    val recordatoriosActivos: StateFlow<Boolean> = _recordatoriosActivos.asStateFlow()
-
-    fun onRecordatoriosChange(activos: Boolean) {
-        _recordatoriosActivos.value = activos
-    }
 
     private fun resumenCliente(
         usuario: UsuarioEntity,

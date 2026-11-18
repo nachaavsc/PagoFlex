@@ -1,5 +1,10 @@
 package com.example.pagoflex.ui.screens
 
+import com.example.pagoflex.ui.theme.VerdeSuave
+import com.example.pagoflex.ui.theme.VerdeOscuro
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.Icons
+import com.example.pagoflex.ui.components.EstadoVacio
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -136,10 +141,12 @@ fun ReporteIncidenciasScreen(
             )
 
             if (incidencias.isEmpty()) {
-                Text(
-                    if (esGestor) "No hay incidencias reportadas." else "Aún no has reportado incidencias.",
-                    color = TextoGris,
-                    fontSize = 14.sp
+                EstadoVacio(
+                    titulo = "Sin incidencias",
+                    mensaje = if (esGestor) "No hay incidencias reportadas por clientes." else "Aún no has reportado incidencias.",
+                    icono = Icons.Filled.CheckCircle,
+                    colorIcono = VerdeOscuro,
+                    fondoIcono = VerdeSuave
                 )
             }
 

@@ -9,6 +9,7 @@ data class FormularioUIState(
     val montoError: String? = null,
     val clave: String = "",
     val claveError: String? = null,
+    val cargando: Boolean = false,
     val guardadoExitoso: Boolean = false
 )
 

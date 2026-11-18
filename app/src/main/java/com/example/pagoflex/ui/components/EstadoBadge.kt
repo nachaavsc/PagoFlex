@@ -1,13 +1,27 @@
 package com.example.pagoflex.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.pagoflex.data.local.EstadoIncidencia
@@ -19,7 +33,9 @@ import com.example.pagoflex.ui.theme.AzulSuave
 import com.example.pagoflex.ui.theme.BordeGris
 import com.example.pagoflex.ui.theme.CoralOscuro
 import com.example.pagoflex.ui.theme.CoralSuave
+import com.example.pagoflex.ui.theme.TarjetaBlanca
 import com.example.pagoflex.ui.theme.TextoGris
+import com.example.pagoflex.ui.theme.TextoOscuro
 import com.example.pagoflex.ui.theme.VerdeOscuro
 import com.example.pagoflex.ui.theme.VerdeSuave
 
@@ -50,4 +66,37 @@ fun EstadoBadge(estado: String, modifier: Modifier = Modifier) {
         border = null,
         modifier = modifier
     )
+}
+
+@Composable
+fun EstadoVacio(
+    titulo: String,
+    mensaje: String,
+    modifier: Modifier = Modifier,
+    icono: ImageVector = Icons.Filled.Info,
+    colorIcono: Color = AzulCorporativo,
+    fondoIcono: Color = AzulSuave
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(TarjetaBlanca, RoundedCornerShape(16.dp))
+            .border(1.dp, BordeGris, RoundedCornerShape(16.dp))
+            .padding(vertical = 28.dp, horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Surface(shape = RoundedCornerShape(50), color = fondoIcono) {
+            Icon(
+                imageVector = icono,
+                contentDescription = null,
+                tint = colorIcono,
+                modifier = Modifier
+                    .padding(12.dp)
+                    .size(28.dp)
+            )
+        }
+        Text(titulo, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextoOscuro, textAlign = TextAlign.Center)
+        Text(mensaje, fontSize = 14.sp, color = TextoGris, textAlign = TextAlign.Center)
+    }
 }

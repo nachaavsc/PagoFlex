@@ -47,6 +47,7 @@ class FormularioViewModel(private val repository: PagoFlexRepository) : ViewMode
 
     fun guardarTransaccion() {
         val state = _uiState.value
+        if (state.cargando) return
         val validado = state.copy(
             nombreError = Validador.nombre(state.nombre),
             correoError = Validador.correo(state.correo),
@@ -58,6 +59,7 @@ class FormularioViewModel(private val repository: PagoFlexRepository) : ViewMode
             .any { it != null }
         if (hayErrores) return
 
+        _uiState.update { it.copy(cargando = true) }
         viewModelScope.launch {
             val nuevaTransaccion = TransaccionEntity(
                 concepto = "Pago a ${state.nombre.trim()}",
@@ -66,7 +68,7 @@ class FormularioViewModel(private val repository: PagoFlexRepository) : ViewMode
                 estado = "Completado"
             )
             repository.agregarTransaccion(nuevaTransaccion)
-            _uiState.update { it.copy(guardadoExitoso = true) }
+            _uiState.update { it.copy(cargando = false, guardadoExitoso = true) }
         }
     }
 

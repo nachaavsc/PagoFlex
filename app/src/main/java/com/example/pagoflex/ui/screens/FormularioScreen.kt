@@ -128,8 +128,9 @@ fun FormularioScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             BotonPrimario(
-                texto = "Procesar Pago Flex",
-                onClick = viewModel::guardarTransaccion
+                texto = if (state.cargando) "Procesando..." else "Procesar Pago Flex",
+                onClick = viewModel::guardarTransaccion,
+                habilitado = !state.cargando
             )
 
             Spacer(modifier = Modifier.height(32.dp))

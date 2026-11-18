@@ -1,5 +1,10 @@
 package com.example.pagoflex.ui.screens
 
+import com.example.pagoflex.ui.theme.VerdeSuave
+import com.example.pagoflex.ui.theme.VerdeOscuro
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.Icons
+import com.example.pagoflex.ui.components.EstadoVacio
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
@@ -187,7 +192,13 @@ private fun LazyListScope.inicioCliente(
 
     if (uiState.cuentasPorPagar.isEmpty()) {
         item {
-            Text("No tienes cuentas pendientes. ¡Estás al día!", color = TextoGris, fontSize = 14.sp)
+            EstadoVacio(
+                titulo = "¡Estás al día!",
+                mensaje = "No tienes cuentas pendientes por pagar.",
+                icono = Icons.Filled.CheckCircle,
+                colorIcono = VerdeOscuro,
+                fondoIcono = VerdeSuave
+            )
         }
     }
 

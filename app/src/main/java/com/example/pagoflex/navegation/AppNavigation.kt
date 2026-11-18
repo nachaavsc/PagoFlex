@@ -1,12 +1,16 @@
 package com.example.pagoflex.navegation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import androidx.navigation.compose.rememberNavController
 import com.example.pagoflex.ui.screens.*
@@ -26,10 +30,18 @@ import com.example.pagoflex.viewmodel.RegistroViewModel
 @Composable
 fun AppNavigation(
     factory: ViewModelProvider.Factory,
-    homeViewModel: HomeViewModel,
-    formularioViewModel: FormularioViewModel
+    homeViewModel: HomeViewModel
 ) {
     val navController = rememberNavController()
+    val usuarioActual by homeViewModel.usuarioActual.collectAsState()
+    val entradaActual by navController.currentBackStackEntryAsState()
+    val rutaActual = entradaActual?.destination?.route
+
+    LaunchedEffect(usuarioActual, rutaActual) {
+        if (usuarioActual == null && rutaActual != null && rutaActual !in rutasPublicas) {
+            navController.volverAlLogin()
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -97,7 +109,7 @@ fun AppNavigation(
 
         composable("formulario") {
             FormularioScreen(
-                viewModel = formularioViewModel,
+                viewModel = viewModel<FormularioViewModel>(factory = factory),
                 onNavegarHome = { navController.popBackStack() }
             )
         }
@@ -108,11 +120,7 @@ fun AppNavigation(
                 onVolver = { navController.popBackStack() },
                 onEditarPerfil = { navController.navigate("editarPerfil") },
                 onCambiarClave = { navController.navigate("cambiarClave") },
-                onCerrarSesion = {
-                    navController.navigate("login") {
-                        popUpTo(navController.graph.id) { inclusive = true }
-                    }
-                }
+                onCerrarSesion = { navController.volverAlLogin() }
             )
         }
 
@@ -155,8 +163,18 @@ fun AppNavigation(
     }
 }
 
+private val rutasPublicas = setOf("login", "registro", "recuperarClave")
+
 private fun NavHostController.entrarAlInicio() {
     navigate("home") {
-        popUpTo("login") { inclusive = true }
+        popUpTo(graph.id) { inclusive = true }
+        launchSingleTop = true
+    }
+}
+
+private fun NavHostController.volverAlLogin() {
+    navigate("login") {
+        popUpTo(graph.id) { inclusive = true }
+        launchSingleTop = true
     }
 }

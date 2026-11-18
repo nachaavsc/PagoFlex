@@ -1,5 +1,8 @@
 package com.example.pagoflex.ui.screens
 
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.Icons
+import com.example.pagoflex.ui.components.EstadoVacio
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -125,10 +128,10 @@ fun HistorialPagosScreen(
 
             if (pagos.isEmpty()) {
                 item(key = "vacio") {
-                    Text(
-                        "No hay pagos registrados en este período.",
-                        color = TextoGris,
-                        fontSize = 14.sp,
+                    EstadoVacio(
+                        titulo = "Sin pagos registrados",
+                        mensaje = "No hay pagos registrados en este período.",
+                        icono = Icons.AutoMirrored.Filled.List,
                         modifier = Modifier.animateItem()
                     )
                 }

@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.pagoflex.ui.theme.BordeGris
+import com.example.pagoflex.ui.theme.TextoGris
 
 @Composable
 fun BotonPrimario(
@@ -25,7 +27,9 @@ fun BotonPrimario(
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            disabledContainerColor = BordeGris,
+            disabledContentColor = TextoGris
         ),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
         modifier = modifier
