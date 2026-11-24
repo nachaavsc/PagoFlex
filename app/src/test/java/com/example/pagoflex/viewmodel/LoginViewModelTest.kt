@@ -1,17 +1,21 @@
 package com.example.pagoflex.viewmodel
 
-import com.example.pagoflex.DatosPrueba
-import com.example.pagoflex.ReglaCorrutinas
+import android.graphics.Bitmap
+import com.example.pagoflex.data.archivos.AlmacenImagenes
 import com.example.pagoflex.data.local.RolUsuario
+import com.example.pagoflex.data.local.UsuarioEntity
+import com.example.pagoflex.data.repository.DatosPrueba
 import com.example.pagoflex.data.repository.PagoFlexRepository
-import com.example.pagoflex.model.LoginUIState
+import com.example.pagoflex.data.repository.ReglaCorrutinas
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Rule
 import org.junit.Test
 
@@ -20,7 +24,10 @@ class LoginViewModelTest {
     @get:Rule
     val regla = ReglaCorrutinas()
 
-    private val repository = mockk<PagoFlexRepository>()
+    private val usuarioActual = MutableStateFlow<UsuarioEntity?>(DatosPrueba.usuario(id = 1))
+    private val repository = mockk<PagoFlexRepository> {
+        every { usuarioActual } returns this@LoginViewModelTest.usuarioActual
+    }
     private val viewModel by lazy { LoginViewModel(repository) }
 
     @Test
@@ -64,19 +71,28 @@ class LoginViewModelTest {
     }
 
     @Test
-    fun cambiosDeCampo_revalidanErroresYNavegacionReiniciaEstado() {
-        viewModel.iniciarSesion()
-        assertNotNull(viewModel.uiState.value.correoError)
+    fun perfil_cargaDatosGuardaCambiosYManejaErrorDeServidor() {
+        val foto = mockk<Bitmap>()
+        val almacenImagenes = mockk<AlmacenImagenes> {
+            every { versionFotos } returns MutableStateFlow(0)
+            coEvery { cargarFotoPerfil(1) } returns foto
+        }
+        coEvery { repository.existeCorreo(any(), any()) } returns false
+        coEvery { repository.actualizarPerfil("Ana Pérez", "ana1@pagoflex.cl", "+56912345678", "Los Leones 45") } returns
+            Unit andThenThrows IllegalStateException("Error del servidor (500)")
+        val perfil = PerfilViewModel(repository, almacenImagenes)
 
-        viewModel.onCorreoChange("correo-invalido")
-        assertEquals("Ingresa un correo válido, por ejemplo nombre@dominio.cl", viewModel.uiState.value.correoError)
+        assertEquals("Ana Pérez", perfil.uiState.value.nombre)
+        assertSame(foto, perfil.fotoPerfil.value)
 
-        viewModel.onCorreoChange("ana@pagoflex.cl")
-        viewModel.onClaveChange("x")
-        assertNull(viewModel.uiState.value.correoError)
-        assertNull(viewModel.uiState.value.claveError)
+        perfil.onDireccionChange("Los Leones 45")
+        perfil.guardarPerfil()
+        assertEquals("Perfil actualizado correctamente", perfil.uiState.value.mensajeExito)
 
-        viewModel.onNavegacionCompletada()
-        assertEquals(LoginUIState(), viewModel.uiState.value)
+        perfil.onMensajeMostrado()
+        perfil.guardarPerfil()
+        assertNull(perfil.uiState.value.mensajeExito)
+        assertEquals("Error del servidor (500)", perfil.uiState.value.correoError)
+        assertFalse(perfil.uiState.value.cargando)
     }
 }

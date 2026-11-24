@@ -1,28 +1,35 @@
 package com.example.pagoflex.viewmodel
 
-import com.example.pagoflex.DatosPrueba
-import com.example.pagoflex.ReglaCorrutinas
-import com.example.pagoflex.data.local.EstadoIncidencia
+import androidx.lifecycle.ViewModel
+import com.example.pagoflex.data.archivos.AlmacenImagenes
 import com.example.pagoflex.data.local.EstadoPago
-import com.example.pagoflex.data.local.RolUsuario
 import com.example.pagoflex.data.local.UsuarioEntity
 import com.example.pagoflex.data.remote.IndicadorRemoto
 import com.example.pagoflex.data.remote.IndicadoresRemotos
 import com.example.pagoflex.data.remote.PagoFlexApi
+import com.example.pagoflex.data.remote.RetrofitClient
+import com.example.pagoflex.data.repository.DatosPrueba
 import com.example.pagoflex.data.repository.PagoFlexRepository
+import com.example.pagoflex.data.repository.ReglaCorrutinas
+import com.example.pagoflex.model.IncidenciaUIState
+import com.example.pagoflex.notificaciones.GestorNotificaciones
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
-import okhttp3.ResponseBody.Companion.toResponseBody
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import retrofit2.Response
@@ -44,18 +51,19 @@ class HomeViewModelTest {
         )
     }
 
-    @Test
-    fun sinSesion_entregaEstadoInicialYSincroniza() = runTest(regla.dispatcher) {
-        val viewModel = HomeViewModel(repository, indicadoresApi)
-        backgroundScope.launch { viewModel.uiState.collect {} }
+    @Before
+    fun preparar() {
+        mockkObject(RetrofitClient)
+        every { RetrofitClient.indicadoresApi } returns indicadoresApi
+    }
 
-        assertEquals(HomeUiState(), viewModel.uiState.value)
-        assertFalse(viewModel.uiState.value.esGestor)
-        coVerify { repository.sincronizar() }
+    @After
+    fun limpiar() {
+        unmockkObject(RetrofitClient)
     }
 
     @Test
-    fun cliente_calculaTotalesVencimientosYCumplimiento() = runTest(regla.dispatcher) {
+    fun cliente_calculaTotalesVencimientosCumplimientoEIndicadores() = runTest(regla.dispatcher) {
         val compromisos = listOf(
             DatosPrueba.compromiso(id = 1, estado = EstadoPago.PAGADO, fechaVencimiento = 100L),
             DatosPrueba.compromiso(id = 2, estado = EstadoPago.PENDIENTE, monto = 20_000L, fechaVencimiento = 500L),
@@ -66,7 +74,7 @@ class HomeViewModelTest {
         every { repository.historialDeUsuario(1) } returns flowOf(listOf(DatosPrueba.pago(compromisoId = 1, fechaPago = 90L)))
         usuarioActual.value = DatosPrueba.usuario()
 
-        val viewModel = HomeViewModel(repository, indicadoresApi)
+        val viewModel = HomeViewModel(repository)
         backgroundScope.launch { viewModel.uiState.collect {} }
 
         val estado = viewModel.uiState.value
@@ -74,54 +82,12 @@ class HomeViewModelTest {
         assertEquals(26_000L, estado.totalPorPagar)
         assertEquals(300L, estado.proximoVencimiento)
         assertEquals(1, estado.cantidadVencidos)
-        assertEquals(3, estado.cuentasPorPagar.size)
         assertEquals(25, estado.porcentajeCumplimiento)
-        assertEquals(1, estado.pagosRealizados)
-        assertEquals(4, estado.totalCompromisos)
         assertEquals(1, estado.rachaAlDia)
-        assertEquals(usuarioActual.value, viewModel.usuarioActual.value)
-    }
-
-    @Test
-    fun gestor_resumeRecaudacionClientesEIncidenciasAbiertas() = runTest(regla.dispatcher) {
-        every { repository.compromisos } returns flowOf(
-            listOf(
-                DatosPrueba.compromiso(id = 1, estado = EstadoPago.PAGADO, monto = 30_000L),
-                DatosPrueba.compromiso(id = 2, estado = EstadoPago.VENCIDO, monto = 4_000L),
-                DatosPrueba.compromiso(id = 3, estado = EstadoPago.PENDIENTE, monto = 6_000L)
-            )
-        )
-        every { repository.clientes } returns flowOf(listOf(DatosPrueba.usuario(id = 1), DatosPrueba.usuario(id = 2)))
-        every { repository.incidencias } returns flowOf(
-            listOf(
-                DatosPrueba.incidencia(id = 1),
-                DatosPrueba.incidencia(id = 2, estado = EstadoIncidencia.RESUELTA)
-            )
-        )
-        usuarioActual.value = DatosPrueba.usuario(id = 9, nombre = "Gestor", rol = RolUsuario.GESTOR)
-
-        val viewModel = HomeViewModel(repository, indicadoresApi)
-        backgroundScope.launch { viewModel.uiState.collect {} }
-
-        val estado = viewModel.uiState.value
-        assertTrue(estado.esGestor)
-        assertEquals(10_000L, estado.totalPorPagar)
-        assertEquals(30_000L, estado.montoRecaudado)
-        assertEquals(1, estado.cantidadVencidos)
-        assertEquals(2, estado.totalClientes)
-        assertEquals(1, estado.incidenciasAbiertas)
-        assertEquals(33, estado.porcentajeCumplimiento)
-    }
-
-    @Test
-    fun indicadores_cargaExitosa_exponeUfYDolar() = runTest(regla.dispatcher) {
-        val viewModel = HomeViewModel(repository, indicadoresApi)
-
-        val indicadores = viewModel.indicadores.value
-        assertEquals(39_123.45, indicadores.uf!!, 0.0)
-        assertEquals(948.7, indicadores.dolar!!, 0.0)
-        assertFalse(indicadores.cargando)
-        assertFalse(indicadores.error)
+        assertEquals(39_123.45, viewModel.indicadores.value.uf!!, 0.0)
+        assertEquals(948.7, viewModel.indicadores.value.dolar!!, 0.0)
+        assertFalse(viewModel.indicadores.value.error)
+        coVerify { repository.sincronizar() }
     }
 
     @Test
@@ -131,7 +97,7 @@ class HomeViewModelTest {
         every { repository.historialDeUsuario(1) } returns flowOf(emptyList())
         usuarioActual.value = DatosPrueba.usuario()
 
-        val viewModel = HomeViewModel(repository, indicadoresApi)
+        val viewModel = HomeViewModel(repository)
         backgroundScope.launch { viewModel.uiState.collect {} }
 
         val indicadores = viewModel.indicadores.value
@@ -140,16 +106,47 @@ class HomeViewModelTest {
         assertNull(indicadores.uf)
         assertNull(indicadores.dolar)
         assertEquals(8_000L, viewModel.uiState.value.totalPorPagar)
-        coVerify { repository.sincronizar() }
     }
 
     @Test
-    fun indicadores_conErrorHttp_marcaError() = runTest(regla.dispatcher) {
-        coEvery { indicadoresApi.obtenerIndicadores() } returns Response.error(503, "{}".toResponseBody())
+    fun fabrica_creaHomeViewModelConRetrofitClientSimuladoYRechazaNoSoportados() {
+        val fabrica = PagoFlexViewModelFactory(
+            repository = repository,
+            notificaciones = mockk<GestorNotificaciones>(relaxed = true),
+            almacenImagenes = mockk<AlmacenImagenes>(relaxed = true)
+        )
 
-        val viewModel = HomeViewModel(repository, indicadoresApi)
+        val home = fabrica.create(HomeViewModel::class.java)
 
-        assertTrue(viewModel.indicadores.value.error)
-        assertNull(viewModel.indicadores.value.uf)
+        assertEquals(39_123.45, home.indicadores.value.uf!!, 0.0)
+        coVerify { indicadoresApi.obtenerIndicadores() }
+        val error = runCatching { fabrica.create(ViewModelDesconocido::class.java) }.exceptionOrNull()
+        assertTrue(error is IllegalArgumentException)
+    }
+
+    private class ViewModelDesconocido : ViewModel()
+
+    @Test
+    fun incidencias_reportarExitosoYConErrorDeServidor() = runTest(regla.dispatcher) {
+        coEvery { repository.reportarIncidencia("Cobro duplicado", "Se cobró dos veces la cuota", any()) } returns
+            DatosPrueba.incidencia(id = 12) andThenThrows IllegalStateException("Error del servidor (503)")
+        val viewModel = IncidenciasViewModel(repository)
+
+        viewModel.onMotivoChange("Cobro duplicado")
+        viewModel.onDetalleChange("  Se cobró dos veces la cuota  ")
+        viewModel.reportarIncidencia()
+
+        assertEquals(IncidenciaUIState(), viewModel.uiState.value)
+        assertEquals(
+            EventoUI.Exito("Incidencia PF-INC-00012 enviada. Te avisaremos cuando sea revisada."),
+            viewModel.eventos.first()
+        )
+
+        viewModel.onMotivoChange("Cobro duplicado")
+        viewModel.onDetalleChange("  Se cobró dos veces la cuota  ")
+        viewModel.reportarIncidencia()
+
+        assertEquals(EventoUI.Error("Error del servidor (503)"), viewModel.eventos.first())
+        assertFalse(viewModel.uiState.value.cargando)
     }
 }

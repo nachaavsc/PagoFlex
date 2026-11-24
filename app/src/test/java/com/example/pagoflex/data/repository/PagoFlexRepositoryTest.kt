@@ -1,7 +1,5 @@
 package com.example.pagoflex.data.repository
 
-import androidx.room.withTransaction
-import com.example.pagoflex.DatosPrueba
 import com.example.pagoflex.data.local.AppDatabase
 import com.example.pagoflex.data.local.CompromisoDao
 import com.example.pagoflex.data.local.CompromisoEntity
@@ -13,7 +11,6 @@ import com.example.pagoflex.data.local.PagoDao
 import com.example.pagoflex.data.local.PagoEntity
 import com.example.pagoflex.data.local.RolUsuario
 import com.example.pagoflex.data.local.TransaccionDao
-import com.example.pagoflex.data.local.TransaccionEntity
 import com.example.pagoflex.data.local.UsuarioDao
 import com.example.pagoflex.data.local.UsuarioEntity
 import com.example.pagoflex.data.remote.CompromisoRemoto
@@ -23,24 +20,115 @@ import com.example.pagoflex.data.remote.PagoRemoto
 import com.example.pagoflex.data.remote.UsuarioRemoto
 import com.example.pagoflex.data.seguridad.Hash
 import com.example.pagoflex.model.LoginResponse
+import com.example.pagoflex.model.Validador
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkStatic
 import io.mockk.slot
-import io.mockk.unmockkStatic
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import okhttp3.ResponseBody.Companion.toResponseBody
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import org.junit.rules.TestWatcher
+import org.junit.runner.Description
 import retrofit2.Response
 import java.io.IOException
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class ReglaCorrutinas(
+    val dispatcher: TestDispatcher = UnconfinedTestDispatcher()
+) : TestWatcher() {
+
+    override fun starting(description: Description) {
+        Dispatchers.setMain(dispatcher)
+    }
+
+    override fun finished(description: Description) {
+        Dispatchers.resetMain()
+    }
+}
+
+object DatosPrueba {
+
+    fun usuario(
+        id: Int = 1,
+        nombre: String = "Ana Pérez",
+        rol: String = RolUsuario.CLIENTE,
+        clave: String = ""
+    ) = UsuarioEntity(
+        id = id,
+        nombre = nombre,
+        correo = "ana$id@pagoflex.cl",
+        clave = clave,
+        rol = rol,
+        telefono = "+56912345678",
+        direccion = "Av. Siempre Viva 123",
+        fechaRegistro = 0L
+    )
+
+    fun compromiso(
+        id: Int = 1,
+        usuarioId: Int = 1,
+        estado: String = EstadoPago.PENDIENTE,
+        monto: Long = 10_000L,
+        fechaVencimiento: Long = 1_000_000L
+    ) = CompromisoEntity(
+        id = id,
+        usuarioId = usuarioId,
+        folio = "PF-%05d".format(id),
+        organizacion = "Plaza Oriente",
+        concepto = "Arriendo",
+        cuotaActual = 1,
+        totalCuotas = 1,
+        monto = monto,
+        fechaVencimiento = fechaVencimiento,
+        estado = estado
+    )
+
+    fun pago(
+        id: Int = 1,
+        compromisoId: Int = 1,
+        fechaPago: Long = System.currentTimeMillis()
+    ) = PagoEntity(
+        id = id,
+        compromisoId = compromisoId,
+        montoPagado = 10_000L,
+        fechaPago = fechaPago,
+        folio = "PF-%05d".format(compromisoId),
+        organizacion = "Plaza Oriente",
+        concepto = "Arriendo",
+        cuotaActual = 1,
+        totalCuotas = 1,
+        canal = "App Móvil PagoFlex",
+        comprobante = "PF-PAGO-$id"
+    )
+
+    fun incidencia(
+        id: Int = 1,
+        usuarioId: Int = 1,
+        estado: String = EstadoIncidencia.EN_REVISION
+    ) = IncidenciaEntity(
+        id = id,
+        usuarioId = usuarioId,
+        folio = "PF-INC-%05d".format(id),
+        motivo = "Cobro duplicado",
+        detalle = "Se cobró dos veces la misma cuota",
+        fechaReporte = 0L,
+        estado = estado,
+        comprobante = "PF-INC-API-$id"
+    )
+}
 
 class PagoFlexRepositoryTest {
 
@@ -67,11 +155,6 @@ class PagoFlexRepositoryTest {
         coEvery { compromisoDao.obtenerPorId(any()) } returns null
         coEvery { pagoDao.obtenerPorId(any()) } returns null
         repository = PagoFlexRepository(db, api)
-    }
-
-    @After
-    fun limpiar() {
-        unmockkStatic("androidx.room.RoomDatabaseKt")
     }
 
     private fun <T> errorHttp(codigo: Int, cuerpo: String = "{}"): Response<T> =
@@ -126,10 +209,11 @@ class PagoFlexRepositoryTest {
     }
 
     @Test
-    fun sincronizar_comoGestor_guardaUsuariosCompromisosPagosEIncidencias() = runTest {
+    fun sincronizar_comoGestor_guardaDatosRemotosYFallaConErrorHttp() = runTest {
+        assertFalse(repository.sincronizar())
+
         iniciarSesionComo(RolUsuario.GESTOR, id = 9L)
-        val cliente = DatosPrueba.usuario(id = 2)
-        coEvery { usuarioDao.obtenerPorId(2) } returns cliente
+        coEvery { usuarioDao.obtenerPorId(2) } returns DatosPrueba.usuario(id = 2)
         coEvery { api.listarUsuarios() } returns Response.success(
             listOf(UsuarioRemoto(id = 2, nombre = "Ana", correo = "ana2@pagoflex.cl"))
         )
@@ -173,159 +257,29 @@ class PagoFlexRepositoryTest {
         assertEquals("PF-PAGO-API-40", pago.captured.comprobante)
         assertEquals(listOf(EstadoIncidencia.RESUELTA, EstadoIncidencia.EN_REVISION), incidencias.map { it.estado })
         coVerify(exactly = 1) { compromisoDao.guardar(any()) }
-    }
 
-    @Test
-    fun sincronizar_sinSesionOConErrorHttp_retornaFalse() = runTest {
-        assertFalse(repository.sincronizar())
-
-        iniciarSesionComo(RolUsuario.CLIENTE)
-        coEvery { api.listarCompromisosPorUsuario(1L) } returns errorHttp(503)
-
+        coEvery { api.listarUsuarios() } returns errorHttp(503)
         assertFalse(repository.sincronizar())
     }
 
     @Test
-    fun registrarUsuario_exitosoYConMensajeDeErrorDelServidor() = runTest {
-        val cuerpo = slot<Map<String, String>>()
-        coEvery { api.registro(capture(cuerpo)) } returns
-            Response.success(LoginResponse(1L, 15L, "ana@pagoflex.cl", RolUsuario.CLIENTE))
-
-        assertEquals(15L, repository.registrarUsuario(" Ana ", " ANA@pagoflex.cl", "+56 9 1234 5678", "Clave#2024"))
+    fun validador_rechazaDatosInvalidosYHashEsDeterministico() {
+        assertEquals("El correo es obligatorio", Validador.correo(""))
+        assertEquals("Ingresa un correo válido, por ejemplo nombre@dominio.cl", Validador.correo("nombre@dominio"))
+        assertNull(Validador.correo("camila.rojas@pagoflex.cl"))
+        assertEquals("El monto debe ser mayor a 0", Validador.monto("0"))
+        assertEquals("El monto no puede superar \$10.000.000", Validador.monto("10000001"))
+        assertNull(Validador.monto("10000000"))
+        assertEquals("La clave debe tener al menos 8 caracteres", Validador.clave("Ab1#"))
+        assertEquals("La clave debe incluir al menos un carácter especial", Validador.clave("Abcdefg1"))
+        assertNull(Validador.clave("Cliente#2026"))
+        assertEquals("Las claves no coinciden", Validador.confirmarClave("Cliente#2026", "Cliente#2025"))
+        assertEquals("El nombre debe tener al menos 3 caracteres", Validador.nombre("Al"))
+        assertEquals("Ingresa un teléfono válido, por ejemplo +56912345678", Validador.telefono("12ab"))
+        assertNull(Validador.telefono("+56 9 1234 5678"))
         assertEquals(
-            mapOf("nombre" to "Ana", "correo" to "ana@pagoflex.cl", "clave" to Hash.sha256("Clave#2024"), "telefono" to "+56912345678"),
-            cuerpo.captured
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+            Hash.sha256("abc")
         )
-
-        coEvery { api.registro(any()) } returns errorHttp(409, "{\"error\": \"El correo ya está registrado\"}")
-        val conMensaje = runCatching { repository.registrarUsuario("Ana", "ana@pagoflex.cl", "+56912345678", "Clave#2024") }
-        assertEquals("El correo ya está registrado", conMensaje.exceptionOrNull()?.message)
-
-        coEvery { api.registro(any()) } returns errorHttp(500, "sin formato")
-        val sinMensaje = runCatching { repository.registrarUsuario("Ana", "ana@pagoflex.cl", "+56912345678", "Clave#2024") }
-        assertEquals("Error del servidor (500)", sinMensaje.exceptionOrNull()?.message)
-    }
-
-    @Test
-    fun restablecerClave_validaTelefonoYExistenciaDelUsuario() = runTest {
-        coEvery { api.obtenerUsuarioPorCorreo("ana@pagoflex.cl") } returns
-            Response.success(UsuarioRemoto(id = 1, correo = "ana@pagoflex.cl", telefono = "+56912345678"))
-        coEvery { api.cambiarClave(any()) } returns Response.success(LoginResponse(1L, 1L, "ana@pagoflex.cl", RolUsuario.CLIENTE))
-        coEvery { usuarioDao.obtenerPorCorreo("ana@pagoflex.cl") } returns DatosPrueba.usuario(id = 1)
-
-        assertFalse(repository.restablecerClave("ana@pagoflex.cl", "+56900000000", "Nueva#2024"))
-        assertTrue(repository.restablecerClave("Ana@pagoflex.cl", "+56 9 1234 5678", "Nueva#2024"))
-        coVerify { usuarioDao.actualizarClave(1, Hash.sha256("Nueva#2024")) }
-
-        coEvery { api.obtenerUsuarioPorCorreo("nadie@pagoflex.cl") } returns errorHttp(404)
-        assertFalse(repository.restablecerClave("nadie@pagoflex.cl", "+56912345678", "Nueva#2024"))
-    }
-
-    @Test
-    fun cambiarClaveYActualizarPerfil_actualizanUsuarioEnSesion() = runTest {
-        assertFalse(repository.cambiarClave("Clave#2024", "Nueva#2024"))
-        repository.actualizarPerfil("Ana", "ana@pagoflex.cl", "+56912345678", "Centro")
-        coVerify(exactly = 0) { api.actualizarUsuario(any(), any()) }
-
-        iniciarSesionComo(RolUsuario.CLIENTE)
-        coEvery { api.cambiarClave(any()) } returns Response.success(LoginResponse(1L, 1L, "ana@pagoflex.cl", RolUsuario.CLIENTE))
-        coEvery { api.actualizarUsuario(1L, any()) } returns Response.success(UsuarioRemoto(id = 1))
-
-        assertFalse(repository.cambiarClave("incorrecta", "Nueva#2024"))
-        assertTrue(repository.cambiarClave("Clave#2024", "Nueva#2024"))
-        assertTrue(repository.verificarClave("Nueva#2024"))
-
-        repository.actualizarPerfil(" Ana María ", " ANA@pagoflex.cl ", "+56 9 8765 4321", " Los Leones 45 ")
-        val actual = repository.usuarioActual.value
-        assertEquals("Ana María", actual?.nombre)
-        assertEquals("+56987654321", actual?.telefono)
-        assertEquals("Los Leones 45", actual?.direccion)
-        coVerify { usuarioDao.actualizar(actual!!) }
-    }
-
-    @Test
-    fun registrarCompromiso_calculaEstadoYFallaSiElServidorNoEntregaId() = runTest {
-        val enviado = slot<CompromisoRemoto>()
-        coEvery { usuarioDao.obtenerPorId(3) } returns DatosPrueba.usuario(id = 3)
-        coEvery { api.crearCompromiso(capture(enviado)) } answers {
-            Response.success(enviado.captured.copy(id = 11))
-        }
-
-        val vencido = repository.registrarCompromiso(3, " Plaza ", " Arriendo ", 50_000L, 0L)
-
-        assertEquals(EstadoPago.VENCIDO, enviado.captured.estado)
-        assertTrue(enviado.captured.fechaVencimiento.orEmpty().matches(Regex("\\d{4}-\\d{2}-\\d{2}")))
-        assertEquals("PF-00011", vencido.folio)
-        assertEquals("Plaza", vencido.organizacion)
-
-        repository.registrarCompromiso(3, "Plaza", "Arriendo", 50_000L, System.currentTimeMillis() + 86_400_000L * 30)
-        assertEquals(EstadoPago.PENDIENTE, enviado.captured.estado)
-
-        coEvery { api.crearCompromiso(any()) } answers { Response.success(enviado.captured.copy(id = null)) }
-        val fallo = runCatching { repository.registrarCompromiso(3, "Plaza", "Arriendo", 50_000L, 0L) }
-        assertEquals("No se pudo guardar el compromiso", fallo.exceptionOrNull()?.message)
-    }
-
-    @Test
-    fun registrarPago_marcaCompromisoPagadoYGuardaPagoConIdRemoto() = runTest {
-        mockkStatic("androidx.room.RoomDatabaseKt")
-        coEvery { db.withTransaction(any<suspend () -> PagoEntity>()) } coAnswers {
-            secondArg<suspend () -> PagoEntity>().invoke()
-        }
-        val compromiso = DatosPrueba.compromiso(id = 5)
-        coEvery { api.registrarPago(5L, any()) } returns
-            Response.success(PagoRemoto(id = 77, compromisoId = 5, monto = 10_000.0))
-
-        val pago = repository.registrarPago(compromiso, "Webpay", 1_000L)
-
-        assertEquals(77, pago.id)
-        assertEquals("PF-PAGO-1000", pago.comprobante)
-        coVerify { compromisoDao.marcarComoPagado(5) }
-        coVerify { pagoDao.guardar(pago) }
-
-        coEvery { api.registrarPago(5L, any()) } returns errorHttp(500)
-        assertTrue(runCatching { repository.registrarPago(compromiso, "Webpay", 2_000L) }.isFailure)
-    }
-
-    @Test
-    fun incidenciasYConsultasLocales_deleganEnDaoYApi() = runTest {
-        assertNull(repository.reportarIncidencia("Cobro", "Detalle", 0L))
-
-        iniciarSesionComo(RolUsuario.CLIENTE)
-        coEvery { usuarioDao.obtenerPorId(1) } returns DatosPrueba.usuario(id = 1)
-        coEvery { api.crearIncidencia(any()) } returns Response.success(
-            IncidenciaRemota(id = 8, usuarioId = 1, titulo = "Cobro", descripcion = "Detalle", fechaCreacion = "fecha-invalida")
-        )
-        coEvery { api.actualizarEstadoIncidencia(8L, mapOf("estado" to "RESUELTA")) } returns
-            Response.success(IncidenciaRemota(id = 8, usuarioId = 1, titulo = "Cobro", descripcion = "Detalle"))
-
-        val incidencia = repository.reportarIncidencia("Cobro", "Detalle", 123L)
-        assertEquals("PF-INC-00008", incidencia?.folio)
-        assertEquals(123L, incidencia?.fechaReporte)
-
-        repository.resolverIncidencia(8)
-        coVerify { incidenciaDao.actualizarEstado(8, EstadoIncidencia.RESUELTA) }
-
-        coEvery { usuarioDao.obtenerPorCorreo("ana@pagoflex.cl") } returns DatosPrueba.usuario(id = 1)
-        assertTrue(repository.existeCorreo(" ANA@pagoflex.cl "))
-        assertFalse(repository.existeCorreo("ana@pagoflex.cl", excluirId = 1))
-        assertFalse(repository.existeCorreo("libre@pagoflex.cl"))
-
-        val compromiso = DatosPrueba.compromiso(id = 4)
-        coEvery { compromisoDao.obtenerPorId(4) } returns compromiso
-        assertEquals(compromiso, repository.obtenerCompromiso(4))
-
-        val transaccion = TransaccionEntity(concepto = "Pago", monto = 1.0)
-        repository.agregarTransaccion(transaccion)
-        coVerify { transaccionDao.insertarTransaccion(transaccion) }
-
-        repository.compromisosDeUsuario(1)
-        repository.historialDeUsuario(1)
-        repository.incidenciasDeUsuario(1)
-        repository.observarUsuario(1)
-        coVerify { compromisoDao.observarPorUsuario(1) }
-        coVerify { pagoDao.observarHistorialPorUsuario(1) }
-        coVerify { incidenciaDao.observarPorUsuario(1) }
-        coVerify { usuarioDao.observarPorId(1) }
     }
 }

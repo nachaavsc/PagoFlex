@@ -1,15 +1,18 @@
 package com.example.pagoflex.viewmodel
 
-import com.example.pagoflex.DatosPrueba
-import com.example.pagoflex.ReglaCorrutinas
 import com.example.pagoflex.data.local.EstadoPago
 import com.example.pagoflex.data.local.RolUsuario
 import com.example.pagoflex.data.local.UsuarioEntity
+import com.example.pagoflex.data.repository.DatosPrueba
 import com.example.pagoflex.data.repository.PagoFlexRepository
+import com.example.pagoflex.data.repository.ReglaCorrutinas
+import com.example.pagoflex.notificaciones.GestorNotificaciones
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -31,6 +34,7 @@ class CompromisosViewModelTest {
         every { usuarioActual } returns this@CompromisosViewModelTest.usuarioActual
         coEvery { sincronizar() } returns true
     }
+    private val notificaciones = mockk<GestorNotificaciones>(relaxed = true)
 
     private fun TestScope.crearViewModel() = CompromisosViewModel(repository).also { viewModel ->
         backgroundScope.launch { viewModel.compromisos.collect {} }
@@ -65,7 +69,7 @@ class CompromisosViewModelTest {
     }
 
     @Test
-    fun cliente_veSoloSusCompromisosSinNombre() = runTest(regla.dispatcher) {
+    fun cliente_veSoloSusCompromisosYSinSesionNoVeNada() = runTest(regla.dispatcher) {
         every { repository.compromisosDeUsuario(1) } returns flowOf(listOf(DatosPrueba.compromiso(id = 5)))
         usuarioActual.value = DatosPrueba.usuario(id = 1)
 
@@ -74,13 +78,46 @@ class CompromisosViewModelTest {
         assertFalse(viewModel.esGestor.value)
         assertEquals(1, viewModel.compromisos.value.size)
         assertNull(viewModel.compromisos.value.first().nombreCliente)
-    }
 
-    @Test
-    fun sinSesion_noMuestraCompromisos() = runTest(regla.dispatcher) {
-        val viewModel = crearViewModel()
+        usuarioActual.value = null
 
         assertTrue(viewModel.compromisos.value.isEmpty())
         assertTrue(viewModel.conteoPorEstado.value.isEmpty())
+    }
+
+    @Test
+    fun confirmarPago_exitoso_marcaPagadoNotificaYEmiteExito() = runTest(regla.dispatcher) {
+        usuarioActual.value = DatosPrueba.usuario(id = 1)
+        val compromiso = DatosPrueba.compromiso(id = 1, usuarioId = 1)
+        val pago = DatosPrueba.pago(compromisoId = 1)
+        coEvery { repository.obtenerCompromiso(1) } returns compromiso
+        coEvery { repository.registrarPago(compromiso, "App Móvil PagoFlex", any()) } returns pago
+        val viewModel = ConfirmarPagoViewModel(repository, notificaciones)
+        viewModel.cargar(1)
+
+        viewModel.confirmarPago()
+        viewModel.confirmarPago()
+
+        val estado = viewModel.uiState.value
+        assertEquals(EstadoPago.PAGADO, estado.compromiso?.estado)
+        assertEquals(pago, estado.pagoRegistrado)
+        assertFalse(estado.cargando)
+        verify(exactly = 1) { notificaciones.notificarPago(pago) }
+        assertEquals(EventoUI.Exito("Pago registrado con éxito"), viewModel.eventos.first())
+    }
+
+    @Test
+    fun confirmarPago_conFalloDeRed_emiteErrorYLiberaCarga() = runTest(regla.dispatcher) {
+        usuarioActual.value = DatosPrueba.usuario(id = 1)
+        coEvery { repository.obtenerCompromiso(1) } returns DatosPrueba.compromiso(id = 1, usuarioId = 1)
+        coEvery { repository.registrarPago(any(), any(), any()) } throws IllegalStateException("Error del servidor (500)")
+        val viewModel = ConfirmarPagoViewModel(repository, notificaciones)
+        viewModel.cargar(1)
+
+        viewModel.confirmarPago()
+
+        assertFalse(viewModel.uiState.value.cargando)
+        assertNull(viewModel.uiState.value.pagoRegistrado)
+        assertEquals(EventoUI.Error("No se pudo registrar el pago. Intenta nuevamente."), viewModel.eventos.first())
     }
 }
