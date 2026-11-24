@@ -112,8 +112,12 @@ class PerfilViewModel(
                 _uiState.update { it.copy(cargando = false, correoError = "Ya existe una cuenta con este correo") }
                 return@launch
             }
-            repository.actualizarPerfil(state.nombre, state.correo, state.telefono, state.direccion)
-            _uiState.update { it.copy(cargando = false, mensajeExito = "Perfil actualizado correctamente") }
+            try {
+                repository.actualizarPerfil(state.nombre, state.correo, state.telefono, state.direccion)
+                _uiState.update { it.copy(cargando = false, mensajeExito = "Perfil actualizado correctamente") }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(cargando = false, correoError = e.message ?: "No se pudo actualizar el perfil") }
+            }
         }
     }
 

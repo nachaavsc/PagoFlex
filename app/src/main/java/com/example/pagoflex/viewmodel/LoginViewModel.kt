@@ -1,77 +1,65 @@
 package com.example.pagoflex.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.pagoflex.data.repository.AuthRepository
-import com.example.pagoflex.model.LoginResponse
+import com.example.pagoflex.data.repository.PagoFlexRepository
 import com.example.pagoflex.model.LoginUIState
 import com.example.pagoflex.model.Validador
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.Result
 
-class LoginViewModel(
-    private val repository: AuthRepository
-) : ViewModel() {
+class LoginViewModel(private val repository: PagoFlexRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUIState())
     val uiState: StateFlow<LoginUIState> = _uiState.asStateFlow()
 
-    fun onCorreoChange(correo: String) {
-        _uiState.value = _uiState.value.copy(
-            correo = correo,
-            correoError = Validador.revalidar(_uiState.value.correoError) { Validador.correo(correo) }
-        )
-    }
-
-    fun onClaveChange(clave: String) {
-        _uiState.value = _uiState.value.copy(
-            clave = clave,
-            claveError = Validador.revalidar(_uiState.value.claveError) { Validador.clave(clave) }
-        )
-    }
-
-    fun hacerLogin() {
-        val state = _uiState.value
-        val errorCorreo = Validador.correo(state.correo)
-        val errorClave = Validador.clave(state.clave)
-
-        if (errorCorreo != null || errorClave != null) {
-            _uiState.value = state.copy(correoError = errorCorreo, claveError = errorClave)
-            return
+    fun onCorreoChange(valor: String) {
+        _uiState.update {
+            it.copy(
+                correo = valor,
+                correoError = Validador.revalidar(it.correoError) { Validador.correo(valor) },
+                errorGeneral = null
+            )
         }
+    }
+
+    fun onClaveChange(valor: String) {
+        _uiState.update {
+            it.copy(
+                clave = valor,
+                claveError = Validador.revalidar(it.claveError) { validarClave(valor) },
+                errorGeneral = null
+            )
+        }
+    }
+
+    private fun validarClave(clave: String): String? =
+        Validador.obligatorio(clave, "La clave es obligatoria")
+
+    fun iniciarSesion() {
+        val state = _uiState.value
+        val correoError = Validador.correo(state.correo)
+        val claveError = validarClave(state.clave)
+        _uiState.update { it.copy(correoError = correoError, claveError = claveError, errorGeneral = null) }
+        if (correoError != null || claveError != null) return
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(cargando = true, errorGeneral = null)
-
-            val resultado: Result<LoginResponse> = repository.login(state.correo, state.clave)
-
-            resultado.onSuccess { respuesta ->
-                _uiState.value = _uiState.value.copy(
-                    cargando = false,
-                    rolAutenticado = respuesta.rol
-                )
-            }.onFailure { error ->
-                _uiState.value = _uiState.value.copy(
-                    cargando = false,
-                    errorGeneral = error.message ?: "Error al iniciar sesión"
-                )
+            _uiState.update { it.copy(cargando = true) }
+            val usuario = repository.iniciarSesion(state.correo, state.clave)
+            _uiState.update {
+                if (usuario == null) {
+                    it.copy(cargando = false, errorGeneral = "Correo o clave incorrectos")
+                } else {
+                    it.copy(cargando = false, clave = "", rolAutenticado = usuario.rol)
+                }
             }
         }
     }
-}
 
-class LoginViewModelFactory(
-    private val repository: AuthRepository
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(LoginViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return LoginViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
+    fun onNavegacionCompletada() {
+        _uiState.value = LoginUIState()
     }
 }

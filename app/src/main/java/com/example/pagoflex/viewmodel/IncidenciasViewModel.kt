@@ -31,6 +31,10 @@ data class IncidenciaConCliente(
 @OptIn(ExperimentalCoroutinesApi::class)
 class IncidenciasViewModel(private val repository: PagoFlexRepository) : ViewModel() {
 
+    init {
+        viewModelScope.launch { repository.sincronizar() }
+    }
+
     val esGestor: StateFlow<Boolean> = repository.usuarioActual
         .map { it?.rol == RolUsuario.GESTOR }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -85,7 +89,13 @@ class IncidenciasViewModel(private val repository: PagoFlexRepository) : ViewMod
 
         viewModelScope.launch {
             _uiState.update { it.copy(cargando = true) }
-            val incidencia = repository.reportarIncidencia(state.motivo, state.detalle.trim(), System.currentTimeMillis())
+            val incidencia = try {
+                repository.reportarIncidencia(state.motivo, state.detalle.trim(), System.currentTimeMillis())
+            } catch (e: Exception) {
+                _uiState.update { it.copy(cargando = false) }
+                _eventos.send(EventoUI.Error(e.message ?: "No se pudo enviar la incidencia"))
+                return@launch
+            }
             if (incidencia == null) {
                 _uiState.update { it.copy(cargando = false) }
                 _eventos.send(EventoUI.Error("Tu sesión expiró. Inicia sesión nuevamente."))
@@ -98,8 +108,12 @@ class IncidenciasViewModel(private val repository: PagoFlexRepository) : ViewMod
 
     fun resolverIncidencia(incidencia: IncidenciaEntity) {
         viewModelScope.launch {
-            repository.resolverIncidencia(incidencia.id)
-            _eventos.send(EventoUI.Exito("Incidencia ${incidencia.folio} marcada como resuelta"))
+            try {
+                repository.resolverIncidencia(incidencia.id)
+                _eventos.send(EventoUI.Exito("Incidencia ${incidencia.folio} marcada como resuelta"))
+            } catch (e: Exception) {
+                _eventos.send(EventoUI.Error(e.message ?: "No se pudo actualizar la incidencia"))
+            }
         }
     }
 }

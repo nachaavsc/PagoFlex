@@ -1,9 +1,8 @@
 package com.example.pagoflex.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.pagoflex.data.repository.AuthRepository
+import com.example.pagoflex.data.repository.PagoFlexRepository
 import com.example.pagoflex.model.RegistroUIState
 import com.example.pagoflex.model.Validador
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-class RegistroViewModel(private val repository: AuthRepository) : ViewModel() {
+class RegistroViewModel(private val repository: PagoFlexRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(RegistroUIState())
     val uiState: StateFlow<RegistroUIState> = _uiState.asStateFlow()
@@ -68,7 +67,6 @@ class RegistroViewModel(private val repository: AuthRepository) : ViewModel() {
             confirmarClaveError = Validador.confirmarClave(state.clave, state.confirmarClave)
         )
         _uiState.value = validado
-
         val hayErrores = listOf(
             validado.nombreError,
             validado.correoError,
@@ -76,45 +74,22 @@ class RegistroViewModel(private val repository: AuthRepository) : ViewModel() {
             validado.claveError,
             validado.confirmarClaveError
         ).any { it != null }
-
         if (hayErrores) return
 
         viewModelScope.launch {
             _uiState.update { it.copy(cargando = true) }
-
-            // Ahora usamos el repositorio de Retrofit para enviar los datos al Gateway
-            val resultado = repository.registro(
-                nombre = state.nombre,
-                correo = state.correo,
-                clave = state.clave,
-                telefono = state.telefono
-            )
-
-            resultado.onSuccess { respuesta ->
-                _uiState.update { it.copy(cargando = false, rolAutenticado = respuesta.rol) }
-            }.onFailure { error ->
-                _uiState.update {
-                    it.copy(
-                        cargando = false,
-                        correoError = error.message ?: "Error al crear la cuenta"
-                    )
-                }
+            try {
+                repository.registrarUsuario(state.nombre, state.correo, state.telefono, state.clave)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(cargando = false, correoError = e.message ?: "No se pudo crear la cuenta") }
+                return@launch
             }
+            val usuario = repository.iniciarSesion(state.correo, state.clave)
+            _uiState.update { it.copy(cargando = false, rolAutenticado = usuario?.rol) }
         }
     }
 
     fun onNavegacionCompletada() {
         _uiState.value = RegistroUIState()
-    }
-}
-class RegistroViewModelFactory(
-    private val repository: AuthRepository
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(RegistroViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return RegistroViewModel(repository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }

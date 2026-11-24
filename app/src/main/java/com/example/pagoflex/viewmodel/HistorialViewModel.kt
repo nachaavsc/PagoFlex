@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.launch
 
 enum class PeriodoHistorial(val etiqueta: String, val dias: Long) {
     ULTIMO_MES("Último mes", 30),
@@ -26,6 +27,10 @@ enum class PeriodoHistorial(val etiqueta: String, val dias: Long) {
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HistorialViewModel(private val repository: PagoFlexRepository) : ViewModel() {
+
+    init {
+        viewModelScope.launch { repository.sincronizar() }
+    }
 
     private val _periodo = MutableStateFlow(PeriodoHistorial.TRES_MESES)
     val periodo: StateFlow<PeriodoHistorial> = _periodo.asStateFlow()

@@ -1,6 +1,5 @@
 package com.example.pagoflex.viewmodel
 
-import android.database.SQLException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pagoflex.data.local.CompromisoEntity
@@ -68,7 +67,7 @@ class ConfirmarPagoViewModel(
                 }
                 notificaciones.notificarPago(pago)
                 _eventos.send(EventoUI.Exito("Pago registrado con éxito"))
-            } catch (e: SQLException) {
+            } catch (e: Exception) {
                 _uiState.update { it.copy(cargando = false) }
                 _eventos.send(EventoUI.Error("No se pudo registrar el pago. Intenta nuevamente."))
             }

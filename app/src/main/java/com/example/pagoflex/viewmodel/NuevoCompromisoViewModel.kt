@@ -84,13 +84,19 @@ class NuevoCompromisoViewModel(
         val fechaVencimiento = state.fechaVencimiento ?: return
         viewModelScope.launch {
             _uiState.update { it.copy(cargando = true) }
-            val compromiso = repository.registrarCompromiso(
-                clienteId = clienteId,
-                organizacion = state.organizacion,
-                concepto = state.concepto,
-                monto = state.monto.trim().toLong(),
-                fechaVencimiento = fechaVencimiento
-            )
+            val compromiso = try {
+                repository.registrarCompromiso(
+                    clienteId = clienteId,
+                    organizacion = state.organizacion,
+                    concepto = state.concepto,
+                    monto = state.monto.trim().toLong(),
+                    fechaVencimiento = fechaVencimiento
+                )
+            } catch (e: Exception) {
+                _uiState.update { it.copy(cargando = false) }
+                _eventos.send(EventoUI.Error(e.message ?: "No se pudo registrar el compromiso"))
+                return@launch
+            }
             notificaciones.notificarCompromisoAsignado(compromiso, state.clienteNombre)
             _uiState.value = NuevoCompromisoUIState()
             _eventos.send(EventoUI.Exito("Compromiso ${compromiso.folio} asignado a ${state.clienteNombre}"))

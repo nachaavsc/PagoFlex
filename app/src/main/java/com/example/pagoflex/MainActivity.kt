@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.example.pagoflex.navegation.AppNavigation
 import com.example.pagoflex.ui.theme.PagoFlexTheme
 import com.example.pagoflex.viewmodel.HomeViewModel
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 
 class MainActivity : ComponentActivity() {
 
@@ -21,6 +22,7 @@ class MainActivity : ComponentActivity() {
         registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
 
         val app = application as PagoFlexApplication

@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class HomeUiState(
     val nombreUsuario: String = "",
@@ -39,6 +40,10 @@ data class HomeUiState(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class HomeViewModel(private val repository: PagoFlexRepository) : ViewModel() {
+
+    init {
+        viewModelScope.launch { repository.sincronizar() }
+    }
 
     val usuarioActual: StateFlow<UsuarioEntity?> = repository.usuarioActual
 

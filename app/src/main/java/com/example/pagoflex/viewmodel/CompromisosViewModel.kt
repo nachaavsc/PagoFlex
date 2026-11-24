@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class CompromisoConCliente(
     val compromiso: CompromisoEntity,
@@ -23,6 +24,10 @@ data class CompromisoConCliente(
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CompromisosViewModel(private val repository: PagoFlexRepository) : ViewModel() {
+
+    init {
+        viewModelScope.launch { repository.sincronizar() }
+    }
 
     val esGestor: StateFlow<Boolean> = repository.usuarioActual
         .map { it?.rol == RolUsuario.GESTOR }

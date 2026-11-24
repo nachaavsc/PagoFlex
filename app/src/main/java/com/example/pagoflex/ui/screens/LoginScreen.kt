@@ -1,113 +1,97 @@
 package com.example.pagoflex.ui.screens
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.pagoflex.data.repository.AuthRepository
+import androidx.compose.ui.unit.sp
+import com.example.pagoflex.ui.components.BotonPrimario
+import com.example.pagoflex.ui.components.CampoTexto
+import com.example.pagoflex.ui.components.MensajeError
+import com.example.pagoflex.ui.components.PantallaFormulario
+import com.example.pagoflex.ui.theme.AzulCorporativo
+import com.example.pagoflex.ui.theme.TextoGris
+import com.example.pagoflex.ui.theme.TextoOscuro
 import com.example.pagoflex.viewmodel.LoginViewModel
-import com.example.pagoflex.viewmodel.LoginViewModelFactory
 
 @Composable
 fun LoginScreen(
-    onLoginExitoso: (String) -> Unit, // Recibe el rol (CLIENTE, ADMIN, etc.)
-    viewModel: LoginViewModel = viewModel(
-        factory = LoginViewModelFactory(AuthRepository())
-    )
+    viewModel: LoginViewModel,
+    onIngresoExitoso: (String) -> Unit,
+    onCrearCuenta: () -> Unit,
+    onRecuperarClave: () -> Unit
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsState()
 
-    // Si el login es exitoso, navegamos a la siguiente pantalla
-    LaunchedEffect(uiState.rolAutenticado) {
-        if (uiState.rolAutenticado != null) {
-            onLoginExitoso(uiState.rolAutenticado!!)
+    LaunchedEffect(state.rolAutenticado) {
+        state.rolAutenticado?.let { rol ->
+            viewModel.onNavegacionCompletada()
+            onIngresoExitoso(rol)
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "PagoFlex",
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-
-        OutlinedTextField(
-            value = uiState.correo,
-            onValueChange = { viewModel.onCorreoChange(it) },
-            label = { Text("Correo electrónico") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            isError = uiState.correoError != null,
-            modifier = Modifier.fillMaxWidth()
-        )
-        if (uiState.correoError != null) {
-            Text(
-                text = uiState.correoError!!,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
+    PantallaFormulario(
+        titulo = null,
+        onVolver = null,
+        encabezado = {
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(start = 16.dp, top = 4.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Campo Clave
-        OutlinedTextField(
-            value = uiState.clave,
-            onValueChange = { viewModel.onClaveChange(it) },
-            label = { Text("Contraseña") },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            isError = uiState.claveError != null,
-            modifier = Modifier.fillMaxWidth()
-        )
-        if (uiState.claveError != null) {
-            Text(
-                text = uiState.claveError!!,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, top = 4.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = { viewModel.hacerLogin() },
-            enabled = !uiState.cargando,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-        ) {
-            if (uiState.cargando) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(24.dp))
-            } else {
-                Text("Iniciar Sesión")
+                    .padding(top = 48.dp, bottom = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("PagoFlex", color = AzulCorporativo, fontWeight = FontWeight.ExtraBold, fontSize = 34.sp)
+                Text("Tus compromisos de pago, siempre al día", color = TextoGris, fontSize = 14.sp)
+            }
+        },
+        pie = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("¿No tienes cuenta?", color = TextoGris, fontSize = 14.sp)
+                TextButton(onClick = onCrearCuenta) {
+                    Text("Crear cuenta", color = AzulCorporativo, fontWeight = FontWeight.Bold)
+                }
             }
         }
-        if (uiState.errorGeneral != null) {
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = uiState.errorGeneral!!,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodyMedium
-            )
+    ) {
+        Text("Iniciar sesión", color = TextoOscuro, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+        CampoTexto(
+            valor = state.correo,
+            onValorChange = viewModel::onCorreoChange,
+            etiqueta = "Correo electrónico",
+            error = state.correoError,
+            tipoTeclado = KeyboardType.Email
+        )
+        CampoTexto(
+            valor = state.clave,
+            onValorChange = viewModel::onClaveChange,
+            etiqueta = "Clave",
+            error = state.claveError,
+            esClave = true
+        )
+        MensajeError(state.errorGeneral)
+        BotonPrimario(
+            texto = if (state.cargando) "Ingresando..." else "Ingresar",
+            onClick = viewModel::iniciarSesion,
+            habilitado = !state.cargando
+        )
+        TextButton(onClick = onRecuperarClave, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            Text("¿Olvidaste tu clave?", color = AzulCorporativo)
         }
     }
 }

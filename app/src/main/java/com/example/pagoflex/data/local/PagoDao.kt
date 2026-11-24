@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -27,4 +28,10 @@ interface PagoDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertarTodos(pagos: List<PagoEntity>)
+
+    @Query("SELECT * FROM pagos WHERE id = :id LIMIT 1")
+    suspend fun obtenerPorId(id: Int): PagoEntity?
+
+    @Upsert
+    suspend fun guardar(pago: PagoEntity)
 }

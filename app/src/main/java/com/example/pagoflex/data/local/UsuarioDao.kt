@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
@@ -33,4 +34,13 @@ interface UsuarioDao {
 
     @Update
     suspend fun actualizar(usuario: UsuarioEntity)
+
+    @Query("SELECT * FROM usuarios WHERE id = :id LIMIT 1")
+    suspend fun obtenerPorId(id: Int): UsuarioEntity?
+
+    @Query("DELETE FROM usuarios WHERE correo = :correo AND id != :id")
+    suspend fun eliminarDuplicadoPorCorreo(correo: String, id: Int)
+
+    @Upsert
+    suspend fun guardar(usuario: UsuarioEntity)
 }

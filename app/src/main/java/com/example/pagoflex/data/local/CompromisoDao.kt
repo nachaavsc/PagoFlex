@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -29,4 +30,10 @@ interface CompromisoDao {
 
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertar(compromiso: CompromisoEntity): Long
+
+    @Query("DELETE FROM compromisos WHERE folio = :folio AND id != :id")
+    suspend fun eliminarDuplicadoPorFolio(folio: String, id: Int)
+
+    @Upsert
+    suspend fun guardar(compromiso: CompromisoEntity)
 }

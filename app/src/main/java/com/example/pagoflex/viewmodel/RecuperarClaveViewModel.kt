@@ -79,7 +79,7 @@ class RecuperarClaveViewModel(private val repository: PagoFlexRepository) : View
 
         viewModelScope.launch {
             _uiState.update { it.copy(cargando = true) }
-            val restablecida = repository.restablecerClave(state.correo, state.telefono, state.clave)
+            val restablecida = runCatching { repository.restablecerClave(state.correo, state.telefono, state.clave) }.getOrDefault(false)
             _uiState.update {
                 if (restablecida) {
                     it.copy(cargando = false, mensajeExito = "Clave actualizada. Ya puedes iniciar sesión.")

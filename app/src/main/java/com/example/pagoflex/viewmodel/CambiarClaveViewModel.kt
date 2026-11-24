@@ -67,7 +67,7 @@ class CambiarClaveViewModel(private val repository: PagoFlexRepository) : ViewMo
 
         viewModelScope.launch {
             _uiState.update { it.copy(cargando = true) }
-            val cambiada = repository.cambiarClave(state.claveActual, state.clave)
+            val cambiada = runCatching { repository.cambiarClave(state.claveActual, state.clave) }.getOrDefault(false)
             _uiState.update {
                 if (cambiada) {
                     CambiarClaveUIState(mensajeExito = "Clave actualizada correctamente")
