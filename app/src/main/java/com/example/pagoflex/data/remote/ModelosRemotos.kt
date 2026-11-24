@@ -41,3 +41,15 @@ data class IncidenciaRemota(
     val respuestaSoporte: String? = null,
     val fechaCreacion: String? = null
 )
+
+data class IndicadorRemoto(
+    val codigo: String? = null,
+    val nombre: String? = null,
+    val fecha: String? = null,
+    val valor: Double? = null
+)
+
+data class IndicadoresRemotos(
+    val uf: IndicadorRemoto? = null,
+    val dolar: IndicadorRemoto? = null
+)

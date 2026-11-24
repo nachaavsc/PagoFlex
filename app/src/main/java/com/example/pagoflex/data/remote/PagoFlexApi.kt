@@ -52,4 +52,7 @@ interface PagoFlexApi {
 
     @PUT("api/incidencias/{id}/estado")
     suspend fun actualizarEstadoIncidencia(@Path("id") id: Long, @Body body: Map<String, String>): Response<IncidenciaRemota>
+
+    @GET("https://mindicador.cl/api")
+    suspend fun obtenerIndicadores(): Response<IndicadoresRemotos>
 }

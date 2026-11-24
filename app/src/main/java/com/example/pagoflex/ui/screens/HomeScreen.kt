@@ -30,6 +30,8 @@ import com.example.pagoflex.ui.util.formatearFecha
 import com.example.pagoflex.ui.util.formatearMonto
 import com.example.pagoflex.viewmodel.HomeUiState
 import com.example.pagoflex.viewmodel.HomeViewModel
+import com.example.pagoflex.viewmodel.IndicadoresUiState
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,6 +46,7 @@ fun HomeScreen(
     onPagar: (Int) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val indicadores by viewModel.indicadores.collectAsState()
 
     Scaffold(
         containerColor = FondoClaro,
@@ -91,6 +94,8 @@ fun HomeScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            item { TarjetaIndicadores(indicadores) }
+
             if (uiState.esGestor) {
                 inicioGestor(
                     uiState = uiState,
@@ -360,6 +365,56 @@ private fun TarjetaCumplimiento(uiState: HomeUiState) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun TarjetaIndicadores(indicadores: IndicadoresUiState) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth().border(1.dp, BordeGris, RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = TarjetaBlanca)
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Indicadores económicos", color = TextoOscuro, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Text("mindicador.cl", color = TextoGris, fontSize = 11.sp)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                ValorIndicador("UF", indicadores.uf, indicadores.cargando, Modifier.weight(1f))
+                ValorIndicador("Dólar", indicadores.dolar, indicadores.cargando, Modifier.weight(1f))
+            }
+            if (indicadores.error) {
+                Text(
+                    "Indicadores no disponibles en este momento",
+                    color = AmbarOscuro,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ValorIndicador(nombre: String, valor: Double?, cargando: Boolean, modifier: Modifier = Modifier) {
+    Column(modifier = modifier) {
+        Text(nombre, color = TextoGris, fontSize = 12.sp)
+        Text(
+            when {
+                valor != null -> "$" + String.format(Locale("es", "CL"), "%,.2f", valor)
+                cargando -> "Cargando..."
+                else -> "—"
+            },
+            color = AzulCorporativo,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        )
     }
 }
 

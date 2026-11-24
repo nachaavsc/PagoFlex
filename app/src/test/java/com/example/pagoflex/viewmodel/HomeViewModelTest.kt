@@ -6,6 +6,9 @@ import com.example.pagoflex.data.local.EstadoIncidencia
 import com.example.pagoflex.data.local.EstadoPago
 import com.example.pagoflex.data.local.RolUsuario
 import com.example.pagoflex.data.local.UsuarioEntity
+import com.example.pagoflex.data.remote.IndicadorRemoto
+import com.example.pagoflex.data.remote.IndicadoresRemotos
+import com.example.pagoflex.data.remote.PagoFlexApi
 import com.example.pagoflex.data.repository.PagoFlexRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -15,11 +18,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import retrofit2.Response
+import java.io.IOException
 
 class HomeViewModelTest {
 
@@ -31,10 +38,15 @@ class HomeViewModelTest {
         every { usuarioActual } returns this@HomeViewModelTest.usuarioActual
         coEvery { sincronizar() } returns true
     }
+    private val indicadoresApi = mockk<PagoFlexApi> {
+        coEvery { obtenerIndicadores() } returns Response.success(
+            IndicadoresRemotos(uf = IndicadorRemoto(codigo = "uf", valor = 39_123.45), dolar = IndicadorRemoto(codigo = "dolar", valor = 948.7))
+        )
+    }
 
     @Test
     fun sinSesion_entregaEstadoInicialYSincroniza() = runTest(regla.dispatcher) {
-        val viewModel = HomeViewModel(repository)
+        val viewModel = HomeViewModel(repository, indicadoresApi)
         backgroundScope.launch { viewModel.uiState.collect {} }
 
         assertEquals(HomeUiState(), viewModel.uiState.value)
@@ -54,7 +66,7 @@ class HomeViewModelTest {
         every { repository.historialDeUsuario(1) } returns flowOf(listOf(DatosPrueba.pago(compromisoId = 1, fechaPago = 90L)))
         usuarioActual.value = DatosPrueba.usuario()
 
-        val viewModel = HomeViewModel(repository)
+        val viewModel = HomeViewModel(repository, indicadoresApi)
         backgroundScope.launch { viewModel.uiState.collect {} }
 
         val estado = viewModel.uiState.value
@@ -88,7 +100,7 @@ class HomeViewModelTest {
         )
         usuarioActual.value = DatosPrueba.usuario(id = 9, nombre = "Gestor", rol = RolUsuario.GESTOR)
 
-        val viewModel = HomeViewModel(repository)
+        val viewModel = HomeViewModel(repository, indicadoresApi)
         backgroundScope.launch { viewModel.uiState.collect {} }
 
         val estado = viewModel.uiState.value
@@ -99,5 +111,45 @@ class HomeViewModelTest {
         assertEquals(2, estado.totalClientes)
         assertEquals(1, estado.incidenciasAbiertas)
         assertEquals(33, estado.porcentajeCumplimiento)
+    }
+
+    @Test
+    fun indicadores_cargaExitosa_exponeUfYDolar() = runTest(regla.dispatcher) {
+        val viewModel = HomeViewModel(repository, indicadoresApi)
+
+        val indicadores = viewModel.indicadores.value
+        assertEquals(39_123.45, indicadores.uf!!, 0.0)
+        assertEquals(948.7, indicadores.dolar!!, 0.0)
+        assertFalse(indicadores.cargando)
+        assertFalse(indicadores.error)
+    }
+
+    @Test
+    fun indicadores_sinInternet_marcaErrorYNoAfectaResumenDelCliente() = runTest(regla.dispatcher) {
+        coEvery { indicadoresApi.obtenerIndicadores() } throws IOException("Sin conexión")
+        every { repository.compromisosDeUsuario(1) } returns flowOf(listOf(DatosPrueba.compromiso(id = 1, monto = 8_000L)))
+        every { repository.historialDeUsuario(1) } returns flowOf(emptyList())
+        usuarioActual.value = DatosPrueba.usuario()
+
+        val viewModel = HomeViewModel(repository, indicadoresApi)
+        backgroundScope.launch { viewModel.uiState.collect {} }
+
+        val indicadores = viewModel.indicadores.value
+        assertTrue(indicadores.error)
+        assertFalse(indicadores.cargando)
+        assertNull(indicadores.uf)
+        assertNull(indicadores.dolar)
+        assertEquals(8_000L, viewModel.uiState.value.totalPorPagar)
+        coVerify { repository.sincronizar() }
+    }
+
+    @Test
+    fun indicadores_conErrorHttp_marcaError() = runTest(regla.dispatcher) {
+        coEvery { indicadoresApi.obtenerIndicadores() } returns Response.error(503, "{}".toResponseBody())
+
+        val viewModel = HomeViewModel(repository, indicadoresApi)
+
+        assertTrue(viewModel.indicadores.value.error)
+        assertNull(viewModel.indicadores.value.uf)
     }
 }

@@ -9,16 +9,28 @@ import com.example.pagoflex.data.local.IncidenciaEntity
 import com.example.pagoflex.data.local.PagoEntity
 import com.example.pagoflex.data.local.RolUsuario
 import com.example.pagoflex.data.local.UsuarioEntity
+import com.example.pagoflex.data.remote.PagoFlexApi
+import com.example.pagoflex.data.remote.RetrofitClient
 import com.example.pagoflex.data.repository.PagoFlexRepository
 import com.example.pagoflex.model.Cumplimiento
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
+
+data class IndicadoresUiState(
+    val uf: Double? = null,
+    val dolar: Double? = null,
+    val cargando: Boolean = true,
+    val error: Boolean = false
+)
 
 data class HomeUiState(
     val nombreUsuario: String = "",
@@ -39,10 +51,30 @@ data class HomeUiState(
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class HomeViewModel(private val repository: PagoFlexRepository) : ViewModel() {
+class HomeViewModel(
+    private val repository: PagoFlexRepository,
+    private val indicadoresApi: PagoFlexApi = RetrofitClient.indicadoresApi
+) : ViewModel() {
+
+    private val _indicadores = MutableStateFlow(IndicadoresUiState())
+    val indicadores: StateFlow<IndicadoresUiState> = _indicadores.asStateFlow()
 
     init {
         viewModelScope.launch { repository.sincronizar() }
+        viewModelScope.launch { cargarIndicadores() }
+    }
+
+    private suspend fun cargarIndicadores() {
+        _indicadores.value = try {
+            val cuerpo = indicadoresApi.obtenerIndicadores().takeIf { it.isSuccessful }?.body()
+            val uf = cuerpo?.uf?.valor
+            val dolar = cuerpo?.dolar?.valor
+            IndicadoresUiState(uf = uf, dolar = dolar, cargando = false, error = uf == null && dolar == null)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            IndicadoresUiState(cargando = false, error = true)
+        }
     }
 
     val usuarioActual: StateFlow<UsuarioEntity?> = repository.usuarioActual
